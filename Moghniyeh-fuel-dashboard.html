@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>داشبورد هوشمند سوخت جایگاه شهید مغنیه</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+<style>
+  body { font-family:'Vazirmatn',sans-serif; background:#0f172a; color:#f8fafc; }
+  .glass-panel { background:rgba(30,41,59,.7); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.08); border-radius:1rem; }
+  .glow-teal { box-shadow:0 0 20px rgba(20,184,166,.15); }
+  .glow-red { box-shadow:0 0 20px rgba(239,68,68,.2); }
+  .glow-amber { box-shadow:0 0 20px rgba(245,158,11,.15); }
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:#0f172a}
+  ::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+  input,select,textarea { background:#0f172a; border:1px solid #334155; color:#f8fafc; border-radius:.6rem; padding:.5rem .7rem; font-size:.8rem; }
+  input:focus,select:focus{outline:none;border-color:#14b8a6}
+  .spin{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .preset-btn{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:.4rem .8rem;border-radius:.6rem;font-size:.7rem;transition:.15s}
+  .preset-btn.active{background:#14b8a6;color:#0f172a;border-color:#14b8a6;font-weight:700}
+  .sec-title{font-size:.75rem;font-weight:700;color:#5eead4;border-bottom:1px solid #334155;padding-bottom:.4rem;margin-bottom:.6rem}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- LOGIN GATE -->
+<div id="loginGate" class="fixed inset-0 bg-slate-950 flex justify-center items-center z-[100] p-4">
+  <div class="glass-panel w-full max-w-sm p-6 space-y-4 glow-teal text-center">
+    <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center text-slate-950 text-2xl"><i class="fa-solid fa-gas-pump"></i></div>
+    <h2 class="font-bold text-white">ورود به داشبورد هوشمند سوخت جایگاه شهید مغنیه</h2>
+    <input id="loginUser" placeholder="نام کاربری" class="w-full text-center">
+    <input id="loginPass" type="password" placeholder="رمز عبور" class="w-full text-center">
+    <p id="loginError" class="text-rose-400 text-xs hidden">نام کاربری یا رمز عبور اشتباه است</p>
+    <button onclick="tryLogin()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ورود</button>
+  </div>
+</div>
+
+<div id="appRoot" class="hidden p-4 md:p-6 space-y-6">
+
+<header class="glass-panel p-4 flex flex-col md:flex-row justify-between items-center gap-4 glow-teal">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center text-slate-950 font-bold text-2xl shadow-lg shadow-teal-500/20">
+      <i class="fa-solid fa-gas-pump"></i>
+    </div>
+    <div>
+      <h1 class="text-xl font-bold bg-gradient-to-r from-teal-300 via-cyan-200 to-white bg-clip-text text-transparent">داشبورد هوشمند سوخت جایگاه شهید مغنیه</h1>
+      <p class="text-xs text-slate-400" id="statusLine">در حال اتصال به گوگل‌شیت...</p>
+      <p class="text-[10px] text-amber-400/80" id="debugLine"></p>
+    </div>
+  </div>
+  <div class="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
+    <button onclick="openSmartModal()" class="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+      <i class="fa-solid fa-wand-magic-sparkles"></i><span>استخراج از عکس</span>
+    </button>
+    <button onclick="openEntryModal()" class="bg-slate-800 hover:bg-slate-700 text-teal-400 border border-teal-500/30 px-3 py-2 rounded-xl text-sm transition flex items-center gap-2">
+      <i class="fa-solid fa-pen"></i><span>ثبت گزارش روزانه</span>
+    </button>
+    <button onclick="loadData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-xl text-sm transition flex items-center gap-2">
+      <i class="fa-solid fa-rotate" id="refreshIcon"></i><span>بروزرسانی</span>
+    </button>
+  </div>
+</header>
+
+<!-- TANK GAUGES -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="glass-panel p-5" id="gaugeBenz"></div>
+  <div class="glass-panel p-5" id="gaugeGas"></div>
+</section>
+
+<!-- KPI -->
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="kpiRow">
+  <div class="glass-panel p-5"><p class="text-slate-400 text-xs">در حال بارگذاری...</p></div>
+</section>
+
+<!-- FILTERS FOR CHARTS -->
+<section class="glass-panel p-5">
+  <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-calendar-days text-teal-400"></i>بازه‌ی زمانی نمودارها و جدول</h3>
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button class="preset-btn" onclick="applyPreset('today')">امروز</button>
+    <button class="preset-btn" onclick="applyPreset('7d')">۷ روز اخیر</button>
+    <button class="preset-btn" onclick="applyPreset('30d')">۳۰ روز اخیر</button>
+    <button class="preset-btn" onclick="applyPreset('month')">این ماه</button>
+    <button class="preset-btn active" onclick="applyPreset('year')">امسال</button>
+    <button class="preset-btn" onclick="applyPreset('all')">کل داده‌ها</button>
+  </div>
+  <div class="flex flex-wrap items-end gap-4 text-xs">
+    <div>
+      <p class="text-slate-400 mb-1">از تاریخ</p>
+      <div class="flex gap-1" id="fromPicker"></div>
+    </div>
+    <div>
+      <p class="text-slate-400 mb-1">تا تاریخ</p>
+      <div class="flex gap-1" id="toPicker"></div>
+    </div>
+    <button onclick="applyCustomRange()" class="preset-btn !bg-cyan-600 !text-white !border-cyan-600">اعمال بازه دلخواه</button>
+    <select id="filterProduct" onchange="renderAll()" class="mr-auto">
+      <option value="">هر دو فرآورده</option>
+      <option value="بنزین">فقط بنزین</option>
+      <option value="نفت‌گاز">فقط نفت‌گاز</option>
+    </select>
+  </div>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="glass-panel p-5 flex flex-col justify-between">
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-pie text-teal-400"></i>کارت آزاد جایگاه در برابر سایر کارت‌ها (بنزین)</h3>
+    <div class="relative h-56"><canvas id="chartCard"></canvas></div>
+  </div>
+  <div class="glass-panel p-5 flex flex-col justify-between">
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-simple text-cyan-400"></i>تفکیک فروش بنزین در بازه انتخابی</h3>
+    <div class="relative h-56"><canvas id="chartBreakdown"></canvas></div>
+  </div>
+  <div class="glass-panel p-5 flex flex-col justify-between">
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-column text-rose-400"></i>روند کسری/سرک در بازه انتخابی</h3>
+    <div class="relative h-56"><canvas id="chartTrend"></canvas></div>
+  </div>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="glass-panel p-5 flex flex-col justify-between lg:col-span-2">
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-line text-rose-400"></i>مقایسه‌ی فروش بنزین و نفت‌گاز در بازه انتخابی</h3>
+    <div class="relative h-64"><canvas id="chartSalesCompare"></canvas></div>
+  </div>
+  <div class="glass-panel p-5 flex flex-col justify-center gap-4">
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-truck-fast text-amber-400"></i>تعداد بار تانکر در بازه</h3>
+    <div class="flex items-center justify-between bg-slate-800/50 rounded-xl p-3">
+      <span class="text-xs text-amber-300 flex items-center gap-2"><i class="fa-solid fa-gas-pump"></i>بنزین (هر بار ۳۲,۰۰۰ لیتر)</span>
+      <span class="text-xl font-black text-white" id="tankerCountB">۰</span>
+    </div>
+    <div class="flex items-center justify-between bg-slate-800/50 rounded-xl p-3">
+      <span class="text-xs text-cyan-300 flex items-center gap-2"><i class="fa-solid fa-oil-can"></i>نفت‌گاز (هر بار ۲۹,۰۰۰ لیتر)</span>
+      <span class="text-xl font-black text-white" id="tankerCountG">۰</span>
+    </div>
+    <p class="text-[10px] text-slate-500 leading-5">این عدد از تقسیم مجموع لیتراژ «رسیده» بر حجم استاندارد هر تانکر تخمین زده میشه؛ اگه یه روز چند تانکر با هم اومده باشن و مجموعشون ثبت شده باشه، همینجا لحاظ میشه.</p>
+  </div>
+</section>
+
+<section class="glass-panel p-5">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-table text-teal-400"></i>سوابق روزانه</h3>
+    <span class="text-xs text-slate-400" id="tableRangeLabel"></span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-[11px] text-center whitespace-nowrap" id="dataTable">
+      <thead><tr class="text-slate-400 border-b border-slate-700">
+        <th class="p-2">تاریخ</th><th class="p-2">اپراتور</th>
+        <th class="p-2 text-amber-300">بنزین: اول</th><th class="p-2 text-amber-300">رسیده</th><th class="p-2 text-amber-300">فروش</th><th class="p-2 text-amber-300">آزمایش</th><th class="p-2 text-amber-300">پایان</th><th class="p-2 text-amber-300">کسری/سرک</th>
+        <th class="p-2 text-cyan-300">گازوئیل: اول</th><th class="p-2 text-cyan-300">رسیده</th><th class="p-2 text-cyan-300">فروش</th><th class="p-2 text-cyan-300">آزمایش</th><th class="p-2 text-cyan-300">پایان</th><th class="p-2 text-cyan-300">کسری/سرک</th>
+        <th class="p-2">عملیات</th>
+      </tr></thead>
+      <tbody id="dataTableBody"></tbody>
+    </table>
+  </div>
+  <div class="flex justify-between items-center mt-3 text-xs text-slate-400">
+    <span id="tableCount"></span>
+    <div class="flex gap-2">
+      <button onclick="changePage(-1)" class="bg-slate-800 px-3 py-1 rounded-lg hover:bg-slate-700"><i class="fa-solid fa-chevron-right"></i></button>
+      <span id="pageLabel" class="px-2"></span>
+      <button onclick="changePage(1)" class="bg-slate-800 px-3 py-1 rounded-lg hover:bg-slate-700"><i class="fa-solid fa-chevron-left"></i></button>
+    </div>
+  </div>
+</section>
+
+</div><!-- appRoot -->
+
+<!-- ENTRY MODAL (combined benzine + gasoil) -->
+<div id="entryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
+  <div class="glass-panel w-full max-w-3xl p-6 space-y-4 border-teal-500/30 max-h-[92vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+      <h3 class="font-bold text-white text-base" id="entryModalTitle">ثبت گزارش روزانه</h3>
+      <button onclick="closeEntryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+      <div>
+        <p class="text-slate-400 mb-1">تاریخ گزارش</p>
+        <div class="flex gap-1" id="entryDatePicker"></div>
+      </div>
+      <label class="space-y-1"><span class="text-slate-400">نام اپراتور ثبت‌کننده</span><input id="f_operator" class="w-full" placeholder="مثلاً: رضایی"></label>
+    </div>
+
+    <div id="overflowWarning" class="hidden bg-rose-500/10 border border-rose-500/40 text-rose-300 text-xs rounded-xl p-3 flex items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+    </div>
+
+    <!-- BENZINE -->
+    <div class="bg-slate-800/40 rounded-xl p-4">
+      <p class="sec-title text-amber-300">⛽ بنزین (مجموع ۲ مخزن)</p>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <label class="space-y-1"><span class="text-slate-400">موجودی اول (خودکار از دیروز)</span><input id="b_start" type="number" class="w-full"></label>
+        <label class="space-y-1"><span class="text-slate-400">تانکر رسیده</span><input id="b_received" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">فروش کل</span><input id="b_total" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">یارانه‌ای</span><input id="b_yarane" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">نیمه‌یارانه‌ای</span><input id="b_nime" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">آزاد</span><input id="b_shakhsi" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">آزاد کارت جایگاه</span><input id="b_jaygah" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">لیتر آزمایش امروز</span><input id="b_test" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">موجودی پایان (اندازه‌گیری‌شده)</span><input id="b_end" type="number" class="w-full"></label>
+      </div>
+      <div class="mt-2 bg-slate-900/60 rounded-lg p-2 flex justify-between"><span class="text-slate-400">کسری/سرک بنزین:</span><span id="b_kasri_preview" class="font-bold">—</span></div>
+    </div>
+
+    <!-- GASOIL -->
+    <div class="bg-slate-800/40 rounded-xl p-4">
+      <p class="sec-title text-cyan-300">🛢 نفت‌گاز (مجموع ۲ مخزن)</p>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <label class="space-y-1"><span class="text-slate-400">موجودی اول (خودکار از دیروز)</span><input id="g_start" type="number" class="w-full"></label>
+        <label class="space-y-1"><span class="text-slate-400">تانکر رسیده</span><input id="g_received" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">فروش کل</span><input id="g_total" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">یارانه‌ای</span><input id="g_yarane" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">نیمه‌یارانه‌ای</span><input id="g_nime" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">آزاد</span><input id="g_shakhsi" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">آزاد کارت جایگاه</span><input id="g_jaygah" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">لیتر آزمایش امروز</span><input id="g_test" type="number" class="w-full" placeholder="0"></label>
+        <label class="space-y-1"><span class="text-slate-400">موجودی پایان (اندازه‌گیری‌شده)</span><input id="g_end" type="number" class="w-full"></label>
+      </div>
+      <div class="mt-2 bg-slate-900/60 rounded-lg p-2 flex justify-between"><span class="text-slate-400">کسری/سرک نفت‌گاز:</span><span id="g_kasri_preview" class="font-bold">—</span></div>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <button onclick="closeEntryModal()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-xs">انصراف</button>
+      <button onclick="saveEntry()" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs">ذخیره در گوگل‌شیت</button>
+    </div>
+  </div>
+</div>
+
+<!-- OCR MODAL -->
+<div id="smartModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden justify-center items-center p-4 z-50">
+  <div class="glass-panel w-full max-w-xl p-6 space-y-4 border-teal-500/30 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+      <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-teal-400"></i>استخراج خودکار از عکس گزارش</h3>
+      <button onclick="closeSmartModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <p class="text-xs text-slate-300">یک یا چند عکس گزارش تایپ‌شده رو انتخاب کن (مثلاً یکی برای بنزین، یکی برای نفت‌گاز). بعد از خوندن متن، حتماً متن استخراج‌شده رو چک/اصلاح کن و بعد دکمه‌ی «پر کردن فرم» رو بزن.</p>
+    <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-3 rounded-xl text-xs flex items-center justify-center gap-2">
+      <i class="fa-solid fa-images text-cyan-400"></i><span id="ocrLabel">انتخاب یک یا چند عکس گزارش</span>
+      <input type="file" class="hidden" accept="image/*" id="ocrFileInput" multiple onchange="runOCR(event)">
+    </label>
+    <div id="ocrProgress" class="hidden text-xs text-teal-400 flex items-center gap-2"><i class="fa-solid fa-circle-notch spin"></i><span id="ocrProgressText">در حال پردازش...</span></div>
+    <div id="ocrResultBox" class="hidden space-y-2">
+      <p class="text-[11px] text-slate-400">متن استخراج‌شده (قابل ویرایش — قبل از پر کردن فرم چک کن):</p>
+      <textarea id="ocrRawText" rows="8" class="w-full text-[11px] font-mono leading-6" dir="rtl"></textarea>
+      <button onclick="applyOcrToForm()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-xs">پر کردن فرم با این متن</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ================= AUTH (client-side simple gate) ================= */
+const AUTH = { user:"MGY_DASH", pass:"MGY_0U0_@$#" };
+function tryLogin(){
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if (u === AUTH.user && p === AUTH.pass){
+    document.getElementById('loginGate').classList.add('hidden');
+    document.getElementById('appRoot').classList.remove('hidden');
+    loadData();
+  } else {
+    document.getElementById('loginError').classList.remove('hidden');
+  }
+}
+
+/* ================= JALALI CALENDAR (pure JS, no dependency) ================= */
+function div(a,b){ return ~~(a/b); }
+function mod(a,b){ return a - ~~(a/b)*b; }
+function jalCal(jy){
+  const breaks=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
+  let bl=breaks.length, jp=breaks[0], jm, jump, leapJ=-14, leap, n, i;
+  for(i=1;i<bl;i+=1){ jm=breaks[i]; jump=jm-jp; if(jy<jm) break; leapJ=leapJ+div(jump,33)*8+div(mod(jump,33),4); jp=jm; }
+  n=jy-jp;
+  leapJ=leapJ+div(n,33)*8+div(mod(n,33)+3,4);
+  if(mod(jump,33)===4 && jump-n===4) leapJ+=1;
+  const gy=jy+621;
+  const leapG=div(gy,4)-div((div(gy,100)+1)*3,4)-150;
+  const march=20+leapJ-leapG;
+  if (jump-n<6) n = n-jump+div(jump+4,33)*33;
+  leap = mod(mod(n+1,33)-1,4);
+  if (leap===-1) leap=4;
+  return {march:march, gy:gy, leap:leap};
+}
+function g2d(gy,gm,gd){
+  let d = div((gy+div(gm-8,6)+100100)*1461,4) + div(153*mod(gm+9,12)+2,5) + gd - 34840408;
+  d = d - div(div(gy+100100+div(gm-8,6),100)*3,4) + 752;
+  return d;
+}
+function d2g(jdn){
+  let j = 4*jdn + 139361631;
+  j = j + div(div(4*jdn+183187720,146097)*3,4)*4 - 3908;
+  let i = div(mod(j,1461),4)*5 + 308;
+  let gd = div(mod(i,153),5)+1;
+  let gm = mod(div(i,153),12)+1;
+  let gy = div(j,1461)-100100+div(8-gm,6);
+  return {gy:gy,gm:gm,gd:gd};
+}
+function j2d(jy,jm,jd){
+  const r = jalCal(jy);
+  return g2d(r.gy,3,r.march) + (jm-1)*31 - div(jm,7)*(jm-7) + jd - 1;
+}
+function d2j(jdn){
+  const gy = d2g(jdn).gy;
+  let jy = gy-621;
+  let r = jalCal(jy);
+  let jdn1f = g2d(gy,3,r.march);
+  let k = jdn - jdn1f, jm, jd;
+  if (k>=0){
+    if (k<=185){ jm=1+div(k,31); jd=mod(k,31)+1; return {jy,jm,jd}; }
+    k -= 186;
+  } else {
+    jy -= 1;
+    r = jalCal(jy);
+    k += 179;
+    if (r.leap===1) k += 1;
+  }
+  jm = 7+div(k,30); jd = mod(k,30)+1;
+  return {jy,jm,jd};
+}
+function gregorianToJalali(gy,gm,gd){ return d2j(g2d(gy,gm,gd)); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function jstr(jy,jm,jd){ return `${jy}/${pad2(jm)}/${pad2(jd)}`; }
+function addDaysToJalaliStr(dateStr, days){
+  const [jy,jm,jd] = dateStr.split('/').map(Number);
+  const jdn = j2d(jy,jm,jd) + days;
+  const r = d2j(jdn);
+  return jstr(r.jy,r.jm,r.jd);
+}
+function todayJalaliStr(){
+  const now = new Date();
+  const r = gregorianToJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
+  return jstr(r.jy,r.jm,r.jd);
+}
+
+/* Build a Y/M/D dropdown date picker inside container, returns getters */
+function buildDatePicker(containerId, initialStr){
+  const container = document.getElementById(containerId);
+  const [iy,im,id] = (initialStr||todayJalaliStr()).split('/').map(Number);
+  const years = []; for(let y=1398;y<=1410;y++) years.push(y);
+  const months = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+  container.innerHTML = `
+    <select class="dp-d">${Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}" ${d===id?'selected':''}>${d}</option>`).join('')}</select>
+    <select class="dp-m">${months.map((m,i)=>`<option value="${i+1}" ${i+1===im?'selected':''}>${m}</option>`).join('')}</select>
+    <select class="dp-y">${years.map(y=>`<option value="${y}" ${y===iy?'selected':''}>${y}</option>`).join('')}</select>
+  `;
+  return {
+    get: () => {
+      const d = container.querySelector('.dp-d').value;
+      const m = container.querySelector('.dp-m').value;
+      const y = container.querySelector('.dp-y').value;
+      return jstr(Number(y), Number(m), Number(d));
+    },
+    set: (str) => {
+      const [y,m,d] = str.split('/').map(Number);
+      container.querySelector('.dp-d').value = d;
+      container.querySelector('.dp-m').value = m;
+      container.querySelector('.dp-y').value = y;
+    }
+  };
+}
+
+let fromPicker, toPicker, entryPicker;
+
+/* ================= CONFIG / DATA ================= */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSSDLJRXiFwfIfgrzJmGGVQ4ix2F5aJQVLhbyZJa1_gMhb81yiqNcUUz7SlZTYXfrq9w/exec";
+const TANK_CAPACITY_PER_FUEL = 90000; // 2 tanks x 45000L
+const TANKER_SIZE = { b: 32000, g: 29000 }; // لیتر هر بار تانکر
+
+let allRows = [];
+let currentPage = 1;
+const PAGE_SIZE = 12;
+let rangeFrom = null, rangeTo = null;
+
+function faToEnDigits(str){
+  const fa="۰۱۲۳۴۵۶۷۸۹", ar="٠١٢٣٤٥٦٧٨٩";
+  return String(str).replace(/[۰-۹]/g,d=>fa.indexOf(d)).replace(/[٠-٩]/g,d=>ar.indexOf(d));
+}
+function toNum(v){
+  if (v===undefined||v===null||v==="") return 0;
+  const n = parseFloat(faToEnDigits(String(v)).replace(/,/g,''));
+  return isNaN(n) ? 0 : n;
+}
+// اگه گوگل‌شیت رشته‌ی تاریخ شمسی رو اشتباهی به تاریخ میلادی تبدیل کرده باشه (مثلاً "1405-05-03T20:34:16.000Z")، برش می‌گردونیم به فرمت اصلی "1405/05/03"
+function normalizeDate(v){
+  if (typeof v !== 'string') v = String(v);
+  const m = v.match(/^(\d{3,4})-(\d{1,2})-(\d{1,2})T/);
+  if (m) return `${m[1]}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}`;
+  return v;
+}
+
+async function loadData(){
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spin');
+  document.getElementById('statusLine').textContent = "در حال دریافت داده از گوگل‌شیت...";
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {method:'GET'});
+    const raw = await res.json();
+    const body = (raw.length && raw[0][0]==="ID") ? raw.slice(1) : raw;
+    allRows = body.filter(r => r[0] && r[24] !== true && r[24] !== "TRUE").map(r => ({
+      id:r[0], date:normalizeDate(r[1]), operator:r[2],
+      b:{start:toNum(r[3]),received:toNum(r[4]),total:toNum(r[5]),yarane:toNum(r[6]),nime:toNum(r[7]),shakhsi:toNum(r[8]),jaygah:toNum(r[9]),test:toNum(r[10]),end:toNum(r[11]),kasri:toNum(r[12])},
+      g:{start:toNum(r[13]),received:toNum(r[14]),total:toNum(r[15]),yarane:toNum(r[16]),nime:toNum(r[17]),shakhsi:toNum(r[18]),jaygah:toNum(r[19]),test:toNum(r[20]),end:toNum(r[21]),kasri:toNum(r[22])}
+    }));
+    document.getElementById('statusLine').textContent = `متصل به گوگل‌شیت — ${allRows.length} رکورد بارگذاری شد`;
+    const latestDate = allRows.length ? allRows.slice().sort((a,b)=>a.date<b.date?1:-1)[0].date : '—';
+    document.getElementById('debugLine').textContent = `آخرین تاریخ ثبت‌شده در داده‌های دریافتی از شیت: ${latestDate} | بازه‌ی فعلی نمایش نمودارها: ${rangeFrom||'ابتدا'} تا ${rangeTo||'انتها'}`;
+    renderAll();
+  }catch(err){
+    document.getElementById('statusLine').textContent = "خطا در اتصال به گوگل‌شیت — لینک Apps Script یا تنظیمات دسترسی را بررسی کنید";
+    console.error(err);
+  }
+  icon.classList.remove('spin');
+}
+
+function renderAll(){ renderGauges(); renderKPIs(); renderCharts(); renderTable(); }
+
+/* ================= PRESETS / FILTER ================= */
+function setActivePreset(btnText){
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  Array.from(document.querySelectorAll('.preset-btn')).find(b=>b.textContent===btnText)?.classList.add('active');
+}
+function applyPreset(kind){
+  const t = todayJalaliStr();
+  const [ty] = t.split('/').map(Number);
+  if (kind==='today'){ rangeFrom=t; rangeTo=t; setActivePreset('امروز'); }
+  if (kind==='7d'){ rangeFrom=addDaysToJalaliStr(t,-6); rangeTo=t; setActivePreset('۷ روز اخیر'); }
+  if (kind==='30d'){ rangeFrom=addDaysToJalaliStr(t,-29); rangeTo=t; setActivePreset('۳۰ روز اخیر'); }
+  if (kind==='month'){ const [,tm]=t.split('/'); rangeFrom=`${ty}/${tm}/01`; rangeTo=`${ty}/${tm}/31`; setActivePreset('این ماه'); }
+  if (kind==='year'){ rangeFrom=`${ty}/01/01`; rangeTo=`${ty}/12/30`; setActivePreset('امسال'); }
+  if (kind==='all'){ rangeFrom=null; rangeTo=null; setActivePreset('کل داده‌ها'); }
+  if (fromPicker && rangeFrom) fromPicker.set(rangeFrom);
+  if (toPicker && rangeTo) toPicker.set(rangeTo);
+  currentPage = 1;
+  renderAll();
+}
+function applyCustomRange(){
+  rangeFrom = fromPicker.get();
+  rangeTo = toPicker.get();
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  currentPage = 1;
+  renderAll();
+}
+function getFiltered(){
+  const product = document.getElementById('filterProduct').value;
+  return allRows.filter(r=>{
+    if (rangeFrom && r.date < rangeFrom) return false;
+    if (rangeTo && r.date > rangeTo) return false;
+    if (product === 'بنزین' && r.b.total===0 && r.b.received===0 && r.b.end===0) return false;
+    if (product === 'نفت‌گاز' && r.g.total===0 && r.g.received===0 && r.g.end===0) return false;
+    return true;
+  }).sort((a,b)=> a.date < b.date ? 1 : -1);
+}
+
+/* ================= GAUGES ================= */
+function renderGauges(){
+  ['b','g'].forEach(key=>{
+    const rows = allRows.filter(r=>true).sort((a,b)=>a.date<b.date?1:-1);
+    const latest = rows.find(r=>r[key].end>0) || rows[0];
+    const stock = latest ? latest[key].end : 0;
+    const pct = Math.min(100, (stock/TANK_CAPACITY_PER_FUEL)*100);
+    const color = pct>95 ? '#f43f5e' : pct>80 ? '#f59e0b' : '#14b8a6';
+    const label = key==='b' ? 'بنزین (۲ مخزن — ظرفیت کل ۹۰,۰۰۰ لیتر)' : 'نفت‌گاز (۲ مخزن — ظرفیت کل ۹۰,۰۰۰ لیتر)';
+    const icon = key==='b' ? 'fa-gas-pump text-amber-400' : 'fa-oil-can text-cyan-400';
+    document.getElementById(key==='b'?'gaugeBenz':'gaugeGas').innerHTML = `
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i class="fa-solid ${icon}"></i>${label}</span>
+        <span class="text-xs text-slate-400">${stock.toLocaleString('fa-IR')} / ۹۰,۰۰۰ لیتر</span>
+      </div>
+      <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden">
+        <div class="h-4 rounded-full transition-all" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <p class="text-left text-xs mt-1 font-bold" style="color:${color}">${pct.toFixed(1)}٪ پر</p>
+    `;
+  });
+}
+
+/* ================= KPI (anomaly thresholds) ================= */
+function kasriStatus(kasri){
+  const a = Math.abs(kasri);
+  if (a<=200) return {text:'مجاز', color:'text-teal-400', glow:''};
+  if (a<=299) return {text:'نیاز به بررسی', color:'text-amber-400', glow:'glow-amber'};
+  return {text:'غیرمجاز — احتمال خطا یا سوءاستفاده', color:'text-rose-400', glow:'glow-red'};
+}
+function latestOf(rows,key){
+  const sorted = rows.slice().sort((a,b)=>a.date<b.date?1:-1);
+  return sorted[0];
+}
+function renderKPIs(){
+  const rows = getFiltered();
+  const benzLatest = latestOf(rows,'b');
+  const kpi = document.getElementById('kpiRow');
+  function card(title,icon,iconColor,glow,salesVal,kasriVal,statusText,statusColor){
+    return `<div class="glass-panel p-5 relative overflow-hidden ${glow}">
+      <div class="flex justify-between items-start mb-3">
+        <span class="text-slate-400 text-xs font-medium">${title}</span>
+        <span class="w-8 h-8 rounded-lg bg-slate-700/40 flex items-center justify-center text-sm ${iconColor}"><i class="fa-solid ${icon}"></i></span>
+      </div>
+      <div class="text-2xl font-black text-white mb-2">${salesVal.toLocaleString('fa-IR')} <span class="text-xs font-normal text-slate-400">لیتر فروش در بازه</span></div>
+      <div class="flex justify-between items-center bg-slate-900/50 rounded-lg px-3 py-2">
+        <span class="text-xs text-slate-400">آخرین ${kasriLabel(kasriVal)} ثبت‌شده</span>
+        <span class="text-sm font-bold ${statusColor}">${Math.abs(kasriVal).toLocaleString('fa-IR')} لیتر</span>
+      </div>
+      <div class="text-[11px] mt-1 ${statusColor}">${statusText}</div>
+    </div>`;
+  }
+  if (!rows.length){ kpi.innerHTML = `<div class="glass-panel p-5 col-span-2 text-center text-slate-400 text-sm">داده‌ای در این بازه ثبت نشده.</div>`; return; }
+  const totalBenz = rows.reduce((s,r)=>s+r.b.total,0);
+  const totalGas = rows.reduce((s,r)=>s+r.g.total,0);
+  const bStatus = kasriStatus(benzLatest.b.kasri);
+  const gLatest = latestOf(rows,'g');
+  const gStatus = kasriStatus(gLatest.g.kasri);
+  let html = "";
+  html += card("بنزین", "fa-fire", "text-amber-400", bStatus.glow, totalBenz, benzLatest.b.kasri, `${bStatus.text} — تاریخ ${benzLatest.date}`, bStatus.color);
+  html += card("نفت‌گاز", "fa-truck-monster", "text-cyan-400", gStatus.glow, totalGas, gLatest.g.kasri, `${gStatus.text} — تاریخ ${gLatest.date}`, gStatus.color);
+  kpi.innerHTML = html;
+}
+
+/* ================= CHARTS ================= */
+let chartCard, chartBreakdown, chartTrend, chartSalesCompare;
+function renderCharts(){
+  const rows = getFiltered();
+  const benzLatest = rows.length ? latestOf(rows,'b') : null;
+  const ctxCard = document.getElementById('chartCard').getContext('2d');
+  const ctxBreak = document.getElementById('chartBreakdown').getContext('2d');
+  const ctxTrend = document.getElementById('chartTrend').getContext('2d');
+  const ctxSales = document.getElementById('chartSalesCompare').getContext('2d');
+  if (chartCard) chartCard.destroy();
+  if (chartBreakdown) chartBreakdown.destroy();
+  if (chartTrend) chartTrend.destroy();
+  if (chartSalesCompare) chartSalesCompare.destroy();
+
+  const jaygah = benzLatest ? benzLatest.b.jaygah : 0;
+  const others = benzLatest ? (benzLatest.b.total - benzLatest.b.jaygah) : 0;
+  chartCard = new Chart(ctxCard, {type:'doughnut', data:{
+    labels:['کارت آزاد جایگاه','سایر کارت‌ها'],
+    datasets:[{data:[jaygah,others], backgroundColor:['#14b8a6','#6366f1'], borderColor:'#1e293b', borderWidth:3}]
+  }, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{color:'#cbd5e1',font:{family:'Vazirmatn',size:11}}}}, cutout:'65%'}});
+
+  const sumB = rows.reduce((acc,r)=>{ acc.yarane+=r.b.yarane; acc.nime+=r.b.nime; acc.shakhsi+=r.b.shakhsi; acc.jaygah+=r.b.jaygah; return acc; }, {yarane:0,nime:0,shakhsi:0,jaygah:0});
+  chartBreakdown = new Chart(ctxBreak, {type:'pie', data:{
+    labels:['یارانه‌ای','نیمه‌یارانه‌ای','آزاد','آزاد کارت جایگاه'],
+    datasets:[{data:[sumB.yarane,sumB.nime,sumB.shakhsi,sumB.jaygah], backgroundColor:['#f59e0b','#3b82f6','#ec4899','#14b8a6'], borderColor:'#1e293b', borderWidth:2}]
+  }, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{color:'#cbd5e1',font:{family:'Vazirmatn',size:10}}}}}});
+
+  const sorted = rows.slice().sort((a,b)=>a.date<b.date?-1:1);
+  const labels = sorted.map(r=>r.date);
+  chartTrend = new Chart(ctxTrend, {type:'bar', data:{
+    labels: labels,
+    datasets:[
+      {label:'بنزین', data: sorted.map(r=>Math.abs(r.b.kasri)), backgroundColor: sorted.map(r=>r.b.kasri<0?'#f43f5e':'#14b8a6'), borderRadius:4, _raw: sorted.map(r=>r.b.kasri)},
+      {label:'نفت‌گاز', data: sorted.map(r=>Math.abs(r.g.kasri)), backgroundColor: sorted.map(r=>r.g.kasri<0?'#fb7185':'#5eead4'), borderRadius:4, _raw: sorted.map(r=>r.g.kasri)}
+    ]
+  }, options:{responsive:true, maintainAspectRatio:false, indexAxis:'x',
+    scales:{y:{beginAtZero:true, ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:10}},grid:{color:'rgba(255,255,255,.05)'}}, x:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:9}},grid:{display:false}}},
+    plugins:{legend:{position:'bottom',labels:{color:'#cbd5e1',font:{family:'Vazirmatn',size:10}}},
+      tooltip:{callbacks:{label:(ctx)=>{
+        const raw = ctx.dataset._raw[ctx.dataIndex];
+        return `${ctx.dataset.label}: ${raw.toLocaleString('fa-IR')} لیتر (${raw<0?'کسری':raw>0?'سرک':'برابر'})`;
+      }}}
+    }}});
+
+  chartSalesCompare = new Chart(ctxSales, {type:'line', data:{
+    labels: labels,
+    datasets:[
+      {label:'فروش بنزین', data: sorted.map(r=>r.b.total), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.15)', tension:.3, fill:true, pointRadius:3},
+      {label:'فروش نفت‌گاز', data: sorted.map(r=>r.g.total), borderColor:'#eab308', backgroundColor:'rgba(234,179,8,.15)', tension:.3, fill:true, pointRadius:3},
+      {label:'رسیده بنزین', data: sorted.map(r=>r.b.received), borderColor:'#ef4444', borderDash:[6,4], backgroundColor:'transparent', tension:.3, fill:false, pointRadius:2, borderWidth:1.5},
+      {label:'رسیده نفت‌گاز', data: sorted.map(r=>r.g.received), borderColor:'#eab308', borderDash:[6,4], backgroundColor:'transparent', tension:.3, fill:false, pointRadius:2, borderWidth:1.5}
+    ]
+  }, options:{responsive:true, maintainAspectRatio:false,
+    scales:{y:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:10}},grid:{color:'rgba(255,255,255,.05)'}}, x:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:9}},grid:{display:false}}},
+    plugins:{legend:{position:'bottom',labels:{color:'#cbd5e1',font:{family:'Vazirmatn',size:9}}}}}});
+
+  const tankersB = Math.round(rows.reduce((s,r)=>s+r.b.received,0) / TANKER_SIZE.b);
+  const tankersG = Math.round(rows.reduce((s,r)=>s+r.g.received,0) / TANKER_SIZE.g);
+  document.getElementById('tankerCountB').textContent = tankersB.toLocaleString('fa-IR');
+  document.getElementById('tankerCountG').textContent = tankersG.toLocaleString('fa-IR');
+}
+
+/* ================= TABLE ================= */
+function changePage(d){ currentPage += d; if (currentPage<1) currentPage=1; renderTable(); }
+function renderTable(){
+  const rows = getFiltered();
+  document.getElementById('tableRangeLabel').textContent = rangeFrom&&rangeTo ? `از ${rangeFrom} تا ${rangeTo}` : 'کل داده‌ها';
+  const totalPages = Math.max(1, Math.ceil(rows.length/PAGE_SIZE));
+  if (currentPage>totalPages) currentPage=totalPages;
+  const pageRows = rows.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  const tbody = document.getElementById('dataTableBody');
+  tbody.innerHTML = pageRows.map(r=>{
+    const bColor = Math.abs(r.b.kasri)>=300 ? 'text-rose-400 font-bold' : Math.abs(r.b.kasri)>=201 ? 'text-amber-400' : 'text-teal-400';
+    const gColor = Math.abs(r.g.kasri)>=300 ? 'text-rose-400 font-bold' : Math.abs(r.g.kasri)>=201 ? 'text-amber-400' : 'text-teal-400';
+    return `<tr class="border-b border-slate-800 hover:bg-slate-800/40">
+      <td class="p-2">${r.date}</td><td class="p-2">${r.operator||'-'}</td>
+      <td class="p-2">${r.b.start.toLocaleString('fa-IR')}</td><td class="p-2">${r.b.received.toLocaleString('fa-IR')}</td><td class="p-2">${r.b.total.toLocaleString('fa-IR')}</td><td class="p-2">${r.b.test.toLocaleString('fa-IR')}</td><td class="p-2">${r.b.end.toLocaleString('fa-IR')}</td><td class="p-2 ${bColor}">${r.b.kasri.toLocaleString('fa-IR')} (${kasriLabel(r.b.kasri)})</td>
+      <td class="p-2">${r.g.start.toLocaleString('fa-IR')}</td><td class="p-2">${r.g.received.toLocaleString('fa-IR')}</td><td class="p-2">${r.g.total.toLocaleString('fa-IR')}</td><td class="p-2">${r.g.test.toLocaleString('fa-IR')}</td><td class="p-2">${r.g.end.toLocaleString('fa-IR')}</td><td class="p-2 ${gColor}">${r.g.kasri.toLocaleString('fa-IR')} (${kasriLabel(r.g.kasri)})</td>
+      <td class="p-2 flex gap-2 justify-center">
+        <button onclick="openEntryModal('${r.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button>
+        <button onclick="deleteEntry('${r.id}','${r.date}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="15" class="p-4 text-slate-500">رکوردی یافت نشد</td></tr>`;
+  document.getElementById('tableCount').textContent = `${rows.length} رکورد`;
+  document.getElementById('pageLabel').textContent = `صفحه ${currentPage} از ${totalPages}`;
+}
+
+/* ================= ENTRY MODAL (add / edit) ================= */
+let editingId = null;
+function autofillYesterday(dateStr){
+  const bRows = allRows.filter(r=>r.date < dateStr && r.b.end>0).sort((a,b)=>a.date<b.date?1:-1);
+  const gRows = allRows.filter(r=>r.date < dateStr && r.g.end>0).sort((a,b)=>a.date<b.date?1:-1);
+  document.getElementById('b_start').value = bRows.length ? bRows[0].b.end : 0;
+  document.getElementById('g_start').value = gRows.length ? gRows[0].g.end : 0;
+  updateKasriPreview();
+}
+function openEntryModal(id){
+  editingId = id || null;
+  document.getElementById('entryModalTitle').textContent = id ? "ویرایش گزارش" : "ثبت گزارش روزانه";
+  if (!entryPicker) entryPicker = buildDatePicker('entryDatePicker', todayJalaliStr());
+
+  if (id){
+    const r = allRows.find(x=>x.id===id);
+    entryPicker.set(r.date);
+    document.getElementById('f_operator').value = r.operator||'';
+    ['start','received','total','yarane','nime','shakhsi','jaygah','test','end'].forEach(f=>{
+      document.getElementById('b_'+f).value = r.b[f];
+      document.getElementById('g_'+f).value = r.g[f];
+    });
+  } else {
+    entryPicker.set(todayJalaliStr());
+    document.getElementById('f_operator').value = '';
+    ['received','total','yarane','nime','shakhsi','jaygah','test'].forEach(f=>{
+      document.getElementById('b_'+f).value = ''; document.getElementById('g_'+f).value = '';
+    });
+    document.getElementById('b_end').value=''; document.getElementById('g_end').value='';
+    autofillYesterday(todayJalaliStr());
+  }
+  updateKasriPreview();
+  document.getElementById('entryModal').classList.remove('hidden');
+  document.getElementById('entryModal').classList.add('flex');
+  document.querySelectorAll('#entryModal input').forEach(el=> el.oninput = updateKasriPreview);
+  document.querySelectorAll('#entryModal input[type=number]').forEach(el=> el.onfocus = ()=> el.select());
+  document.querySelectorAll('#entryDatePicker select').forEach(el=> el.onchange = ()=>{ if(!editingId) autofillYesterday(entryPicker.get()); checkOverflow(); });
+}
+function closeEntryModal(){
+  document.getElementById('entryModal').classList.add('hidden');
+  document.getElementById('entryModal').classList.remove('flex');
+  editingId = null;
+}
+function calcKasri(prefix){
+  const start = toNum(document.getElementById(prefix+'_start').value);
+  const received = toNum(document.getElementById(prefix+'_received').value);
+  const total = toNum(document.getElementById(prefix+'_total').value);
+  const test = toNum(document.getElementById(prefix+'_test').value);
+  const end = toNum(document.getElementById(prefix+'_end').value);
+  // منفی = کسری واقعی (موجودی واقعی کمتر از انتظار) | مثبت = سرک واقعی (موجودی واقعی بیشتر از انتظار)
+  return end - (start + received) + (total - test);
+}
+function kasriLabel(v){ return v < 0 ? 'کسری' : v > 0 ? 'سرک' : 'برابر'; }
+function checkOverflow(){
+  const bOver = toNum(document.getElementById('b_start').value) + toNum(document.getElementById('b_received').value) > TANK_CAPACITY_PER_FUEL;
+  const gOver = toNum(document.getElementById('g_start').value) + toNum(document.getElementById('g_received').value) > TANK_CAPACITY_PER_FUEL;
+  const warnBox = document.getElementById('overflowWarning');
+  if (bOver || gOver){
+    warnBox.classList.remove('hidden');
+    warnBox.querySelector('span').textContent = `هشدار: مجموع موجودی اول + رسیده از ظرفیت کل مخزن (۹۰,۰۰۰ لیتر) ${bOver?'بنزین':''}${bOver&&gOver?' و ':''}${gOver?'نفت‌گاز':''} بیشتره — احتمال سرریز یا خطای ورودی!`;
+  } else { warnBox.classList.add('hidden'); }
+}
+function updateKasriPreview(){
+  const bk = calcKasri('b'), gk = calcKasri('g');
+  const bEl = document.getElementById('b_kasri_preview');
+  const gEl = document.getElementById('g_kasri_preview');
+  const bs = kasriStatus(bk), gs = kasriStatus(gk);
+  bEl.textContent = `${bk.toLocaleString('fa-IR')} لیتر (${kasriLabel(bk)}) — ${bs.text}`;
+  bEl.className = "font-bold " + bs.color;
+  gEl.textContent = `${gk.toLocaleString('fa-IR')} لیتر (${kasriLabel(gk)}) — ${gs.text}`;
+  gEl.className = "font-bold " + gs.color;
+  checkOverflow();
+}
+
+async function saveEntry(){
+  const date = entryPicker.get();
+  const operator = document.getElementById('f_operator').value || '-';
+  if (!date){ alert('تاریخ را انتخاب کنید'); return; }
+  const bk = calcKasri('b'), gk = calcKasri('g');
+  const row = [
+    date, operator,
+    toNum(document.getElementById('b_start').value), toNum(document.getElementById('b_received').value), toNum(document.getElementById('b_total').value),
+    toNum(document.getElementById('b_yarane').value), toNum(document.getElementById('b_nime').value), toNum(document.getElementById('b_shakhsi').value), toNum(document.getElementById('b_jaygah').value),
+    toNum(document.getElementById('b_test').value), toNum(document.getElementById('b_end').value), bk,
+    toNum(document.getElementById('g_start').value), toNum(document.getElementById('g_received').value), toNum(document.getElementById('g_total').value),
+    toNum(document.getElementById('g_yarane').value), toNum(document.getElementById('g_nime').value), toNum(document.getElementById('g_shakhsi').value), toNum(document.getElementById('g_jaygah').value),
+    toNum(document.getElementById('g_test').value), toNum(document.getElementById('g_end').value), gk
+  ];
+  try{
+    await fetch(APPS_SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: editingId?'edit':'add', id: editingId, operator, row })
+    });
+    closeEntryModal(); closeSmartModal();
+    await loadData();
+  }catch(err){ alert('خطا در ذخیره‌سازی — اتصال اینترنت یا لینک Apps Script را بررسی کنید'); console.error(err); }
+}
+async function deleteEntry(id, date){
+  if (!confirm(`آیا از حذف گزارش تاریخ ${date} مطمئنی؟ این عملیات در تاریخچه ثبت می‌شود.`)) return;
+  try{
+    await fetch(APPS_SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'delete', id, operator: 'حذف از داشبورد' })
+    });
+    await loadData();
+  }catch(err){ alert('خطا در حذف'); console.error(err); }
+}
+
+/* ================= OCR ================= */
+function openSmartModal(){
+  document.getElementById('smartModal').classList.remove('hidden');
+  document.getElementById('smartModal').classList.add('flex');
+  document.getElementById('ocrResultBox').classList.add('hidden');
+  document.getElementById('ocrRawText').value = "";
+}
+function closeSmartModal(){
+  document.getElementById('smartModal').classList.add('hidden');
+  document.getElementById('smartModal').classList.remove('flex');
+  document.getElementById('ocrProgress').classList.add('hidden');
+  document.getElementById('ocrFileInput').value = "";
+}
+async function runOCR(ev){
+  const files = Array.from(ev.target.files || []);
+  if (!files.length) return;
+  document.getElementById('ocrProgress').classList.remove('hidden');
+  document.getElementById('ocrResultBox').classList.add('hidden');
+  let combinedText = "";
+  try{
+    for (let i=0;i<files.length;i++){
+      document.getElementById('ocrLabel').textContent = `در حال پردازش عکس ${i+1} از ${files.length}...`;
+      const result = await Tesseract.recognize(files[i], 'fas', { logger: m=>{
+        document.getElementById('ocrProgressText').textContent = m.status==='recognizing text'
+          ? `عکس ${i+1} از ${files.length} — در حال خواندن متن... ${Math.round(m.progress*100)}٪`
+          : `عکس ${i+1} از ${files.length} — ${m.status}`;
+      }});
+      combinedText += (combinedText?'\n---\n':'') + faToEnDigits(result.data.text);
+    }
+    document.getElementById('ocrRawText').value = combinedText;
+    document.getElementById('ocrResultBox').classList.remove('hidden');
+  }catch(err){ alert('خطا در پردازش عکس — دوباره تلاش کن'); console.error(err); }
+  document.getElementById('ocrProgress').classList.add('hidden');
+  document.getElementById('ocrLabel').textContent = "انتخاب یک یا چند عکس گزارش";
+}
+function applyOcrToForm(){
+  const text = document.getElementById('ocrRawText').value;
+  const parsed = parseReportText(text);
+  closeSmartModal();
+  openEntryModal();
+  if (parsed._date) entryPicker.set(parsed._date);
+  Object.keys(parsed).forEach(k=>{
+    if (k==='_date') return;
+    if (document.getElementById(k) && parsed[k]!=="" && parsed[k]!==undefined) document.getElementById(k).value = parsed[k];
+  });
+  updateKasriPreview();
+}
+function grabNumber(text, keywords){
+  for (const kw of keywords){
+    const re = new RegExp(kw+"[^0-9\\n]{0,14}([0-9,]+(?:\\.[0-9]+)?)\\s*(-|منفی)?","i");
+    const m = text.match(re);
+    if (m) return toNum(m[1]) * (m[2]?-1:1);
+  }
+  return "";
+}
+function grabDate(text){
+  const m = text.match(/1[34][0-9]{2}[\/\-][0-9]{1,2}[\/\-][0-9]{1,2}/);
+  if (!m) return "";
+  const [y,mo,d] = m[0].split(/[\/\-]/).map(Number);
+  return jstr(y,mo,d);
+}
+function parseReportText(text){
+  const t = faToEnDigits(text);
+  const gasIdx = t.search(/نفت.?گاز|گازوئیل/);
+  const benzChunk = gasIdx>=0 ? t.slice(0,gasIdx) : t;
+  const gasChunk = gasIdx>=0 ? t.slice(gasIdx) : "";
+  // نکته مهم: توی گزارش‌های تلگرامی، کلمه‌ی تنهای «موجودی» یعنی موجودی پایانِ اندازه‌گیری‌شده (نه موجودی اول) —
+  // موجودی اول رو سیستم خودش از رکورد روز قبل میاره، پس اینجا استخراجش نمی‌کنیم مگر صریحاً «موجودی اول» نوشته شده باشه.
+  function fields(chunk, prefix){
+    const nimeVal = grabNumber(chunk, ["نیمه"]);
+    // خط «نیمه‌یارانه» رو قبل از جستجوی «یارانه» ساده حذف می‌کنیم تا با هم قاطی نشن
+    const chunkNoNime = chunk.replace(/نیمه[^\n]{0,20}?[0-9][0-9,]*(?:\.[0-9]+)?/,'');
+    const out = {
+      [`${prefix}_received`]: grabNumber(chunk,["رسیده","تانکر"]),
+      [`${prefix}_total`]: grabNumber(chunk,["فروش کل","فروش\\s*:","فروش"]),
+      [`${prefix}_yarane`]: grabNumber(chunkNoNime,["یارانه‌ای","یارانه ای","یارانه"]),
+      [`${prefix}_nime`]: nimeVal,
+      [`${prefix}_jaygah`]: grabNumber(chunk,["کارت جایگاه","کارت آزاد جایگاه"]),
+      [`${prefix}_end`]: grabNumber(chunk,["موجودی پایان","موجودی آخر","موجودی"]),
+    };
+    const explicitStart = grabNumber(chunk,["موجودی اول"]);
+    if (explicitStart !== "") out[`${prefix}_start`] = explicitStart;
+    out[`${prefix}_shakhsi`] = grabNumber(chunk,["آزاد شخصی","آزاد"]);
+    return out;
+  }
+  return Object.assign({_date: grabDate(t)}, fields(benzChunk,'b'), gasChunk?fields(gasChunk,'g'):{});
+}
+
+/* ================= INIT ================= */
+// فقط بازه‌ی پیش‌فرض رو تنظیم کن، بدون رندر کردن (چون appRoot هنوز مخفیه) — رندر واقعی بعد از ورود موفق داخل loadData() انجام میشه
+(function initDefaultRange(){
+  const t = todayJalaliStr();
+  const [ty] = t.split('/').map(Number);
+  rangeFrom = `${ty}/01/01`;
+  rangeTo = `${ty}/12/30`;
+})();
+fromPicker = buildDatePicker('fromPicker', rangeFrom);
+toPicker = buildDatePicker('toPicker', rangeTo);
+setActivePreset('امسال');
+</script>
+</body>
+</html>
