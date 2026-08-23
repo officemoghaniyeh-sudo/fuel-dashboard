@@ -82,9 +82,9 @@
 <section class="glass-panel p-5">
   <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-calendar-days text-teal-400"></i>بازه‌ی زمانی نمودارها و جدول</h3>
   <div class="flex flex-wrap gap-2 mb-4">
-    <button class="preset-btn" onclick="applyPreset('today')">امروز</button>
+    <button class="preset-btn" onclick="applyPreset('yesterday')">دیروز</button>
     <button class="preset-btn" onclick="applyPreset('7d')">۷ روز اخیر</button>
-    <button class="preset-btn" onclick="applyPreset('30d')">۳۰ روز اخیر</button>
+    <button class="preset-btn" onclick="applyPreset('10d')">۱۰ روز اخیر</button>
     <button class="preset-btn" onclick="applyPreset('month')">این ماه</button>
     <button class="preset-btn active" onclick="applyPreset('year')">امسال</button>
     <button class="preset-btn" onclick="applyPreset('all')">کل داده‌ها</button>
@@ -113,7 +113,7 @@
     <div class="relative h-56"><canvas id="chartCard"></canvas></div>
   </div>
   <div class="glass-panel p-5 flex flex-col justify-between">
-    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-simple text-cyan-400"></i>تفکیک فروش بنزین در بازه انتخابی</h3>
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-simple text-sky-400"></i>تفکیک فروش بنزین در بازه انتخابی</h3>
     <div class="relative h-56"><canvas id="chartBreakdown"></canvas></div>
   </div>
   <div class="glass-panel p-5 flex flex-col justify-between">
@@ -124,17 +124,17 @@
 
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="glass-panel p-5 flex flex-col justify-between lg:col-span-2">
-    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-line text-rose-400"></i>مقایسه‌ی فروش بنزین و نفت‌گاز در بازه انتخابی</h3>
+    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-line text-indigo-400"></i>مقایسه‌ی فروش بنزین و نفت‌گاز در بازه انتخابی</h3>
     <div class="relative h-64"><canvas id="chartSalesCompare"></canvas></div>
   </div>
   <div class="glass-panel p-5 flex flex-col justify-center gap-4">
     <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-truck-fast text-amber-400"></i>تعداد بار تانکر در بازه</h3>
     <div class="flex items-center justify-between bg-slate-800/50 rounded-xl p-3">
-      <span class="text-xs text-amber-300 flex items-center gap-2"><i class="fa-solid fa-gas-pump"></i>بنزین (هر بار ۳۲,۰۰۰ لیتر)</span>
+      <span class="text-xs text-sky-300 flex items-center gap-2"><i class="fa-solid fa-gas-pump"></i>بنزین (هر بار ۳۲,۰۰۰ لیتر)</span>
       <span class="text-xl font-black text-white" id="tankerCountB">۰</span>
     </div>
     <div class="flex items-center justify-between bg-slate-800/50 rounded-xl p-3">
-      <span class="text-xs text-cyan-300 flex items-center gap-2"><i class="fa-solid fa-oil-can"></i>نفت‌گاز (هر بار ۲۹,۰۰۰ لیتر)</span>
+      <span class="text-xs text-violet-300 flex items-center gap-2"><i class="fa-solid fa-gas-pump"></i>نفت‌گاز (هر بار ۲۹,۰۰۰ لیتر)</span>
       <span class="text-xl font-black text-white" id="tankerCountG">۰</span>
     </div>
     <p class="text-[10px] text-slate-500 leading-5">این عدد از تقسیم مجموع لیتراژ «رسیده» بر حجم استاندارد هر تانکر تخمین زده میشه؛ اگه یه روز چند تانکر با هم اومده باشن و مجموعشون ثبت شده باشه، همینجا لحاظ میشه.</p>
@@ -150,8 +150,8 @@
     <table class="w-full text-[11px] text-center whitespace-nowrap" id="dataTable">
       <thead><tr class="text-slate-400 border-b border-slate-700">
         <th class="p-2">تاریخ</th><th class="p-2">اپراتور</th>
-        <th class="p-2 text-amber-300">بنزین: اول</th><th class="p-2 text-amber-300">رسیده</th><th class="p-2 text-amber-300">فروش</th><th class="p-2 text-amber-300">آزمایش</th><th class="p-2 text-amber-300">پایان</th><th class="p-2 text-amber-300">کسری/سرک</th>
-        <th class="p-2 text-cyan-300">گازوئیل: اول</th><th class="p-2 text-cyan-300">رسیده</th><th class="p-2 text-cyan-300">فروش</th><th class="p-2 text-cyan-300">آزمایش</th><th class="p-2 text-cyan-300">پایان</th><th class="p-2 text-cyan-300">کسری/سرک</th>
+        <th class="p-2 text-sky-300">بنزین: اول</th><th class="p-2 text-sky-300">رسیده</th><th class="p-2 text-sky-300">فروش</th><th class="p-2 text-sky-300">آزمایش</th><th class="p-2 text-sky-300">پایان</th><th class="p-2 text-sky-300">کسری/سرک</th>
+        <th class="p-2 text-violet-300">گازوئیل: اول</th><th class="p-2 text-violet-300">رسیده</th><th class="p-2 text-violet-300">فروش</th><th class="p-2 text-violet-300">آزمایش</th><th class="p-2 text-violet-300">پایان</th><th class="p-2 text-violet-300">کسری/سرک</th>
         <th class="p-2">عملیات</th>
       </tr></thead>
       <tbody id="dataTableBody"></tbody>
@@ -191,7 +191,7 @@
 
     <!-- BENZINE -->
     <div class="bg-slate-800/40 rounded-xl p-4">
-      <p class="sec-title text-amber-300">⛽ بنزین (مجموع ۲ مخزن)</p>
+      <p class="sec-title text-sky-300">⛽ بنزین (مجموع ۲ مخزن)</p>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
         <label class="space-y-1"><span class="text-slate-400">موجودی اول (خودکار از دیروز)</span><input id="b_start" type="number" class="w-full"></label>
         <label class="space-y-1"><span class="text-slate-400">تانکر رسیده</span><input id="b_received" type="number" class="w-full" placeholder="0"></label>
@@ -208,7 +208,7 @@
 
     <!-- GASOIL -->
     <div class="bg-slate-800/40 rounded-xl p-4">
-      <p class="sec-title text-cyan-300">🛢 نفت‌گاز (مجموع ۲ مخزن)</p>
+      <p class="sec-title text-violet-300">🛢 نفت‌گاز (مجموع ۲ مخزن)</p>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
         <label class="space-y-1"><span class="text-slate-400">موجودی اول (خودکار از دیروز)</span><input id="g_start" type="number" class="w-full"></label>
         <label class="space-y-1"><span class="text-slate-400">تانکر رسیده</span><input id="g_received" type="number" class="w-full" placeholder="0"></label>
@@ -407,7 +407,7 @@ async function loadData(){
     }));
     document.getElementById('statusLine').textContent = `متصل به گوگل‌شیت — ${allRows.length} رکورد بارگذاری شد`;
     const latestDate = allRows.length ? allRows.slice().sort((a,b)=>a.date<b.date?1:-1)[0].date : '—';
-    document.getElementById('debugLine').textContent = `آخرین تاریخ ثبت‌شده در داده‌های دریافتی از شیت: ${latestDate} | بازه‌ی فعلی نمایش نمودارها: ${rangeFrom||'ابتدا'} تا ${rangeTo||'انتها'}`;
+    document.getElementById('debugLine').innerHTML = `آخرین تاریخ ثبت‌شده در داده‌های دریافتی از شیت: <bdi>${latestDate}</bdi> | بازه‌ی فعلی نمایش نمودارها: از <bdi>${rangeFrom||'ابتدا'}</bdi> تا <bdi>${rangeTo||'انتها'}</bdi>`;
     renderAll();
   }catch(err){
     document.getElementById('statusLine').textContent = "خطا در اتصال به گوگل‌شیت — لینک Apps Script یا تنظیمات دسترسی را بررسی کنید";
@@ -426,9 +426,9 @@ function setActivePreset(btnText){
 function applyPreset(kind){
   const t = todayJalaliStr();
   const [ty] = t.split('/').map(Number);
-  if (kind==='today'){ rangeFrom=t; rangeTo=t; setActivePreset('امروز'); }
+  if (kind==='yesterday'){ const y=addDaysToJalaliStr(t,-1); rangeFrom=y; rangeTo=y; setActivePreset('دیروز'); }
   if (kind==='7d'){ rangeFrom=addDaysToJalaliStr(t,-6); rangeTo=t; setActivePreset('۷ روز اخیر'); }
-  if (kind==='30d'){ rangeFrom=addDaysToJalaliStr(t,-29); rangeTo=t; setActivePreset('۳۰ روز اخیر'); }
+  if (kind==='10d'){ rangeFrom=addDaysToJalaliStr(t,-9); rangeTo=t; setActivePreset('۱۰ روز اخیر'); }
   if (kind==='month'){ const [,tm]=t.split('/'); rangeFrom=`${ty}/${tm}/01`; rangeTo=`${ty}/${tm}/31`; setActivePreset('این ماه'); }
   if (kind==='year'){ rangeFrom=`${ty}/01/01`; rangeTo=`${ty}/12/30`; setActivePreset('امسال'); }
   if (kind==='all'){ rangeFrom=null; rangeTo=null; setActivePreset('کل داده‌ها'); }
@@ -457,23 +457,25 @@ function getFiltered(){
 
 /* ================= GAUGES ================= */
 function renderGauges(){
+  const LOW_STOCK = 15000; // آستانه‌ی بحرانی — کمتر از این یعنی نیاز فوری به سفارش سوخت. پر بودن مخزن مشکلی نیست.
   ['b','g'].forEach(key=>{
     const rows = allRows.filter(r=>true).sort((a,b)=>a.date<b.date?1:-1);
     const latest = rows.find(r=>r[key].end>0) || rows[0];
     const stock = latest ? latest[key].end : 0;
     const pct = Math.min(100, (stock/TANK_CAPACITY_PER_FUEL)*100);
-    const color = pct>95 ? '#f43f5e' : pct>80 ? '#f59e0b' : '#14b8a6';
+    const critical = stock <= LOW_STOCK;
+    const color = critical ? '#f43f5e' : '#22c55e';
     const label = key==='b' ? 'بنزین (۲ مخزن — ظرفیت کل ۹۰,۰۰۰ لیتر)' : 'نفت‌گاز (۲ مخزن — ظرفیت کل ۹۰,۰۰۰ لیتر)';
-    const icon = key==='b' ? 'fa-gas-pump text-amber-400' : 'fa-oil-can text-cyan-400';
+    const icon = key==='b' ? 'fa-gas-pump text-sky-400' : 'fa-gas-pump text-violet-400';
     document.getElementById(key==='b'?'gaugeBenz':'gaugeGas').innerHTML = `
       <div class="flex justify-between items-center mb-2">
         <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i class="fa-solid ${icon}"></i>${label}</span>
         <span class="text-xs text-slate-400">${stock.toLocaleString('fa-IR')} / ۹۰,۰۰۰ لیتر</span>
       </div>
-      <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden">
+      <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden mb-2">
         <div class="h-4 rounded-full transition-all" style="width:${pct}%;background:${color}"></div>
       </div>
-      <p class="text-left text-xs mt-1 font-bold" style="color:${color}">${pct.toFixed(1)}٪ پر</p>
+      <p class="text-left text-xs font-bold" style="color:${color}">${pct.toFixed(1)}٪ پر — ${stock.toLocaleString('fa-IR')} لیتر — وضعیت: ${critical?'بحرانی (نیاز به سفارش سوخت)':'مناسب'}</p>
     `;
   });
 }
@@ -514,8 +516,8 @@ function renderKPIs(){
   const gLatest = latestOf(rows,'g');
   const gStatus = kasriStatus(gLatest.g.kasri);
   let html = "";
-  html += card("بنزین", "fa-fire", "text-amber-400", bStatus.glow, totalBenz, benzLatest.b.kasri, `${bStatus.text} — تاریخ ${benzLatest.date}`, bStatus.color);
-  html += card("نفت‌گاز", "fa-truck-monster", "text-cyan-400", gStatus.glow, totalGas, gLatest.g.kasri, `${gStatus.text} — تاریخ ${gLatest.date}`, gStatus.color);
+  html += card("بنزین", "fa-car", "text-sky-400", bStatus.glow, totalBenz, benzLatest.b.kasri, `${bStatus.text} — تاریخ <bdi>${benzLatest.date}</bdi>`, bStatus.color);
+  html += card("نفت‌گاز", "fa-truck", "text-violet-400", gStatus.glow, totalGas, gLatest.g.kasri, `${gStatus.text} — تاریخ <bdi>${gLatest.date}</bdi>`, gStatus.color);
   kpi.innerHTML = html;
 }
 
@@ -533,8 +535,9 @@ function renderCharts(){
   if (chartTrend) chartTrend.destroy();
   if (chartSalesCompare) chartSalesCompare.destroy();
 
-  const jaygah = benzLatest ? benzLatest.b.jaygah : 0;
-  const others = benzLatest ? (benzLatest.b.total - benzLatest.b.jaygah) : 0;
+  const jaygah = rows.reduce((s,r)=>s+r.b.jaygah,0);
+  const totalB = rows.reduce((s,r)=>s+r.b.total,0);
+  const others = totalB - jaygah;
   chartCard = new Chart(ctxCard, {type:'doughnut', data:{
     labels:['کارت آزاد جایگاه','سایر کارت‌ها'],
     datasets:[{data:[jaygah,others], backgroundColor:['#14b8a6','#6366f1'], borderColor:'#1e293b', borderWidth:3}]
@@ -566,10 +569,10 @@ function renderCharts(){
   chartSalesCompare = new Chart(ctxSales, {type:'line', data:{
     labels: labels,
     datasets:[
-      {label:'فروش بنزین', data: sorted.map(r=>r.b.total), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.15)', tension:.3, fill:true, pointRadius:3},
-      {label:'فروش نفت‌گاز', data: sorted.map(r=>r.g.total), borderColor:'#eab308', backgroundColor:'rgba(234,179,8,.15)', tension:.3, fill:true, pointRadius:3},
-      {label:'رسیده بنزین', data: sorted.map(r=>r.b.received), borderColor:'#ef4444', borderDash:[6,4], backgroundColor:'transparent', tension:.3, fill:false, pointRadius:2, borderWidth:1.5},
-      {label:'رسیده نفت‌گاز', data: sorted.map(r=>r.g.received), borderColor:'#eab308', borderDash:[6,4], backgroundColor:'transparent', tension:.3, fill:false, pointRadius:2, borderWidth:1.5}
+      {label:'فروش بنزین', data: sorted.map(r=>r.b.total), borderColor:'#38bdf8', backgroundColor:'rgba(56,189,248,.15)', tension:.3, fill:true, pointRadius:3},
+      {label:'فروش نفت‌گاز', data: sorted.map(r=>r.g.total), borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,.15)', tension:.3, fill:true, pointRadius:3},
+      {label:'رسیده بنزین', data: sorted.map(r=>r.b.received), borderColor:'#38bdf8', borderDash:[6,4], backgroundColor:'transparent', tension:.3, fill:false, pointRadius:2, borderWidth:1.5},
+      {label:'رسیده نفت‌گاز', data: sorted.map(r=>r.g.received), borderColor:'#a78bfa', borderDash:[6,4], backgroundColor:'transparent', tension:.3, fill:false, pointRadius:2, borderWidth:1.5}
     ]
   }, options:{responsive:true, maintainAspectRatio:false,
     scales:{y:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:10}},grid:{color:'rgba(255,255,255,.05)'}}, x:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:9}},grid:{display:false}}},
@@ -585,7 +588,12 @@ function renderCharts(){
 function changePage(d){ currentPage += d; if (currentPage<1) currentPage=1; renderTable(); }
 function renderTable(){
   const rows = getFiltered();
-  document.getElementById('tableRangeLabel').textContent = rangeFrom&&rangeTo ? `از ${rangeFrom} تا ${rangeTo}` : 'کل داده‌ها';
+  if (rows.length){
+    const dates = rows.map(r=>r.date).sort();
+    document.getElementById('tableRangeLabel').innerHTML = `از <bdi>${dates[0]}</bdi> تا <bdi>${dates[dates.length-1]}</bdi> (${rows.length} رکورد)`;
+  } else {
+    document.getElementById('tableRangeLabel').textContent = 'رکوردی در این بازه نیست';
+  }
   const totalPages = Math.max(1, Math.ceil(rows.length/PAGE_SIZE));
   if (currentPage>totalPages) currentPage=totalPages;
   const pageRows = rows.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
