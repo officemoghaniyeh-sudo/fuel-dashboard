@@ -37,7 +37,85 @@
     <input id="loginUser" placeholder="نام کاربری" class="w-full text-center">
     <input id="loginPass" type="password" placeholder="رمز عبور" class="w-full text-center">
     <p id="loginError" class="text-rose-400 text-xs hidden">نام کاربری یا رمز عبور اشتباه است</p>
-    <button onclick="tryLogin()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ورود</button>
+    <button onclick="tryLogin()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ورود مدیریت</button>
+    <div class="pt-2 border-t border-slate-700">
+      <button onclick="showPumpchiStandalone()" class="w-full bg-slate-800 hover:bg-slate-700 text-teal-400 border border-teal-500/30 py-2 rounded-xl text-sm mt-3">
+        <i class="fa-solid fa-gas-pump"></i> ورود پمپچی (با پین‌کد شخصی)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PUMPCHI STANDALONE (no admin password needed) -->
+<div id="pumpchiStandaloneRoot" class="hidden fixed inset-0 bg-slate-950 overflow-y-auto z-[90] p-4 md:p-6">
+  <div class="max-w-2xl mx-auto space-y-6">
+    <div class="flex justify-between items-center">
+      <h2 class="font-bold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-gas-pump text-teal-400"></i>ورود پمپچی — جایگاه شهید مغنیه</h2>
+      <button onclick="pumpchiBackToLogin()" class="text-xs text-slate-400 border border-slate-700 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-arrow-right"></i> بازگشت</button>
+    </div>
+
+    <!-- PIN GATE (standalone) -->
+    <section id="pumpchiPinGateStandalone" class="glass-panel p-6 max-w-sm mx-auto text-center space-y-3">
+      <i class="fa-solid fa-user-lock text-3xl text-teal-400"></i>
+      <p class="text-sm text-slate-300">پین‌کد شخصی خودت رو وارد کن</p>
+      <input id="pumpchiPinInputStandalone" type="password" inputmode="numeric" placeholder="پین‌کد" class="w-full text-center text-lg tracking-widest">
+      <p id="pumpchiPinErrorStandalone" class="text-rose-400 text-xs hidden">پین‌کد اشتباهه یا سرور بروزرسانی نشده</p>
+      <button onclick="verifyPumpchiPin(true)" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ورود</button>
+    </section>
+
+    <!-- OPERATOR WORKSPACE (standalone) -->
+    <section id="pumpchiWorkspaceStandalone" class="space-y-6 hidden">
+      <div class="glass-panel p-4 flex justify-between items-center">
+        <p class="text-sm font-bold text-white" id="pumpchiWelcomeStandalone"></p>
+        <button onclick="pumpchiLogout(true)" class="text-xs text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+      </div>
+
+      <div class="glass-panel p-5 space-y-3">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-pen"></i>ثبت شیفت جدید</h3>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <p class="text-slate-400 mb-1">تاریخ</p>
+            <div class="flex gap-1" id="pumpchiDatePickerStandalone"></div>
+          </div>
+          <label class="space-y-1"><span class="text-slate-400">شیفت</span>
+            <select id="pc_shift_s" class="w-full"><option value="اول">اول</option><option value="دوم">دوم</option><option value="سوم">سوم</option></select>
+          </label>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 mb-2">لیتر فروخته‌شده هر نازل</p>
+          <div class="grid grid-cols-4 gap-2 text-xs" id="pumpchiNozzleInputsStandalone"></div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+          <label class="space-y-1"><span class="text-slate-400">فروش کل</span><input id="pc_total_s" type="number" class="w-full" placeholder="0"></label>
+          <label class="space-y-1"><span class="text-slate-400">کارت جایگاه</span><input id="pc_jaygah_s" type="number" class="w-full" placeholder="0"></label>
+          <label class="space-y-1"><span class="text-slate-400">نقدی</span><input id="pc_naghdi_s" type="number" class="w-full" placeholder="0"></label>
+          <label class="space-y-1"><span class="text-slate-400">کسری</span><input id="pc_kasri_s" type="number" class="w-full" placeholder="0"></label>
+          <label class="space-y-1"><span class="text-slate-400">مکمل</span><input id="pc_mokammel_s" type="number" class="w-full" placeholder="0"></label>
+          <label class="space-y-1"><span class="text-slate-400">کل</span><input id="pc_kol_s" type="number" class="w-full" placeholder="0"></label>
+        </div>
+        <label class="space-y-1 block"><span class="text-slate-400 text-xs">توضیحات (خرابی، فاکتور جایگاه، پاسگاه، هر مورد دیگه)</span>
+          <textarea id="pc_desc_s" rows="3" class="w-full text-xs"></textarea>
+        </label>
+        <button onclick="savePumpchiShift(true)" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ذخیره شیفت</button>
+      </div>
+
+      <div class="glass-panel p-5">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-line text-teal-400"></i>روند فروش شخصی</h3>
+        <div class="relative h-56"><canvas id="pumpchiPersonalChartStandalone"></canvas></div>
+      </div>
+
+      <div class="glass-panel p-5">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-clock-rotate-left text-teal-400"></i>سوابق شیفت‌های من</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-[11px] text-center whitespace-nowrap">
+            <thead><tr class="text-slate-400 border-b border-slate-700">
+              <th class="p-2">تاریخ</th><th class="p-2">شیفت</th><th class="p-2">فروش کل</th><th class="p-2">کارت جایگاه</th><th class="p-2">نقدی</th><th class="p-2">کسری</th><th class="p-2">مکمل</th><th class="p-2">کل</th>
+            </tr></thead>
+            <tbody id="pumpchiPersonalTableBodyStandalone"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -179,9 +257,20 @@
 
 <div id="page_pumpchi" class="space-y-6 hidden">
 
-  <section class="glass-panel p-4 flex flex-wrap gap-2">
-    <button onclick="pumpchiShowAdmin()" id="pumpchiAdminBtn" class="preset-btn active">👁 نمایش مدیریتی (همه‌ی پمپچی‌ها)</button>
-    <button onclick="pumpchiShowGate()" id="pumpchiGateBtn" class="preset-btn">🔑 ورود پمپچی با پین‌کد</button>
+  <section class="glass-panel p-5 space-y-4">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-user-gear text-teal-400"></i>مدیریت پروفایل‌های پمپچی</h3>
+      <button onclick="pumpchiOpenAddUser()" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i> افزودن پمپچی جدید</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs text-center">
+        <thead><tr class="text-slate-400 border-b border-slate-700">
+          <th class="p-2">نام</th><th class="p-2">فرآورده</th><th class="p-2">پین‌کد</th><th class="p-2">عملیات</th>
+        </tr></thead>
+        <tbody id="pumpchiUsersTableBody"></tbody>
+      </table>
+    </div>
+    <p class="text-xs text-slate-400" id="pumpchiUsersCount"></p>
   </section>
 
   <!-- ADMIN VIEW -->
@@ -206,70 +295,24 @@
     </div>
   </section>
 
-  <!-- PIN GATE -->
-  <section id="pumpchiPinGate" class="glass-panel p-6 max-w-sm mx-auto text-center space-y-3 hidden">
-    <i class="fa-solid fa-user-lock text-3xl text-teal-400"></i>
-    <p class="text-sm text-slate-300">پین‌کد شخصی خودت رو وارد کن</p>
-    <input id="pumpchiPinInput" type="password" inputmode="numeric" placeholder="پین‌کد" class="w-full text-center text-lg tracking-widest">
-    <p id="pumpchiPinError" class="text-rose-400 text-xs hidden">پین‌کد اشتباهه</p>
-    <button onclick="verifyPumpchiPin()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ورود</button>
-  </section>
-
-  <!-- OPERATOR WORKSPACE -->
-  <section id="pumpchiWorkspace" class="space-y-6 hidden">
-    <div class="glass-panel p-4 flex justify-between items-center">
-      <p class="text-sm font-bold text-white" id="pumpchiWelcome"></p>
-      <button onclick="pumpchiLogout()" class="text-xs text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
-    </div>
-
-    <div class="glass-panel p-5 space-y-3">
-      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-pen"></i>ثبت شیفت جدید</h3>
-      <div class="grid grid-cols-2 gap-3 text-xs">
-        <div>
-          <p class="text-slate-400 mb-1">تاریخ</p>
-          <div class="flex gap-1" id="pumpchiDatePicker"></div>
-        </div>
-        <label class="space-y-1"><span class="text-slate-400">شیفت</span>
-          <select id="pc_shift" class="w-full"><option value="اول">اول</option><option value="دوم">دوم</option><option value="سوم">سوم</option></select>
-        </label>
-      </div>
-      <div>
-        <p class="text-xs text-slate-400 mb-2">لیتر فروخته‌شده هر نازل</p>
-        <div class="grid grid-cols-4 gap-2 text-xs" id="pumpchiNozzleInputs"></div>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-        <label class="space-y-1"><span class="text-slate-400">فروش کل</span><input id="pc_total" type="number" class="w-full" placeholder="0"></label>
-        <label class="space-y-1"><span class="text-slate-400">کارت جایگاه</span><input id="pc_jaygah" type="number" class="w-full" placeholder="0"></label>
-        <label class="space-y-1"><span class="text-slate-400">نقدی</span><input id="pc_naghdi" type="number" class="w-full" placeholder="0"></label>
-        <label class="space-y-1"><span class="text-slate-400">کسری</span><input id="pc_kasri" type="number" class="w-full" placeholder="0"></label>
-        <label class="space-y-1"><span class="text-slate-400">مکمل</span><input id="pc_mokammel" type="number" class="w-full" placeholder="0"></label>
-        <label class="space-y-1"><span class="text-slate-400">کل</span><input id="pc_kol" type="number" class="w-full" placeholder="0"></label>
-      </div>
-      <label class="space-y-1 block"><span class="text-slate-400 text-xs">توضیحات (خرابی، فاکتور جایگاه، پاسگاه، هر مورد دیگه)</span>
-        <textarea id="pc_desc" rows="3" class="w-full text-xs"></textarea>
-      </label>
-      <button onclick="savePumpchiShift()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-sm">ذخیره شیفت</button>
-    </div>
-
-    <div class="glass-panel p-5">
-      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-chart-line text-teal-400"></i>روند فروش شخصی</h3>
-      <div class="relative h-56"><canvas id="pumpchiPersonalChart"></canvas></div>
-    </div>
-
-    <div class="glass-panel p-5">
-      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-clock-rotate-left text-teal-400"></i>سوابق شیفت‌های من</h3>
-      <div class="overflow-x-auto">
-        <table class="w-full text-[11px] text-center whitespace-nowrap">
-          <thead><tr class="text-slate-400 border-b border-slate-700">
-            <th class="p-2">تاریخ</th><th class="p-2">شیفت</th><th class="p-2">فروش کل</th><th class="p-2">کارت جایگاه</th><th class="p-2">نقدی</th><th class="p-2">کسری</th><th class="p-2">مکمل</th><th class="p-2">کل</th>
-          </tr></thead>
-          <tbody id="pumpchiPersonalTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
 </div><!-- page_pumpchi -->
+
+<!-- ADD/EDIT PUMPCHI USER MODAL -->
+<div id="pumpchiUserModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
+  <div class="glass-panel w-full max-w-sm p-6 space-y-4 border-teal-500/30">
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+      <h3 class="font-bold text-white text-base">افزودن پمپچی جدید</h3>
+      <button onclick="pumpchiCloseUserModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <label class="space-y-1 block text-xs"><span class="text-slate-400">نام</span><input id="pu_name" class="w-full"></label>
+    <label class="space-y-1 block text-xs"><span class="text-slate-400">فرآورده</span>
+      <select id="pu_fuel" class="w-full"><option value="بنزین">بنزین</option><option value="نفت‌گاز">نفت‌گاز</option></select>
+    </label>
+    <label class="space-y-1 block text-xs"><span class="text-slate-400">پین‌کد (فقط عدد، حداقل ۴ رقم)</span><input id="pu_pin" inputmode="numeric" class="w-full"></label>
+    <p id="pumpchiUserError" class="text-rose-400 text-xs hidden"></p>
+    <button onclick="pumpchiSaveUser()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-xs">ذخیره</button>
+  </div>
+</div>
 
 </div><!-- appRoot -->
 
@@ -921,36 +964,73 @@ function switchPage(name){
   document.getElementById('page_pumpchi').classList.toggle('hidden', name!=='pumpchi');
   document.getElementById('tabBtn_sales').classList.toggle('active', name==='sales');
   document.getElementById('tabBtn_pumpchi').classList.toggle('active', name==='pumpchi');
-  if (name==='pumpchi' && !pumpchiUsersLoaded) loadPumpchiAdmin();
+  if (name==='pumpchi'){ loadPumpchiUsers(); loadPumpchiAdmin(); }
 }
 
-/* ================= PUMPCHI MODULE ================= */
+/* ================= PUMPCHI: STANDALONE ENTRY (no admin password) ================= */
+function showPumpchiStandalone(){
+  document.getElementById('loginGate').classList.add('hidden');
+  document.getElementById('pumpchiStandaloneRoot').classList.remove('hidden');
+  pumpchiCurrentUser = null;
+  document.getElementById('pumpchiPinGateStandalone').classList.remove('hidden');
+  document.getElementById('pumpchiWorkspaceStandalone').classList.add('hidden');
+  document.getElementById('pumpchiPinInputStandalone').value = '';
+  document.getElementById('pumpchiPinErrorStandalone').classList.add('hidden');
+}
+function pumpchiBackToLogin(){
+  document.getElementById('pumpchiStandaloneRoot').classList.add('hidden');
+  document.getElementById('loginGate').classList.remove('hidden');
+  pumpchiCurrentUser = null;
+}
+
+/* ================= PUMPCHI MODULE (shared logic) ================= */
 const NOZZLE_COUNT = { 'بنزین': 8, 'نفت‌گاز': 4 };
 let pumpchiAllShifts = [];
-let pumpchiUsersLoaded = false;
+let pumpchiAllUsers = [];
 let pumpchiCurrentUser = null; // {name, fuel}
-let pumpchiDatePicker = null;
-let pumpchiChart = null;
+let pumpchiDatePickerStandalone = null;
+let pumpchiChartStandalone = null;
 
-function pumpchiShowAdmin(){
-  document.getElementById('pumpchiAdminView').classList.remove('hidden');
-  document.getElementById('pumpchiPinGate').classList.add('hidden');
-  document.getElementById('pumpchiWorkspace').classList.add('hidden');
-  document.getElementById('pumpchiAdminBtn').classList.add('active');
-  document.getElementById('pumpchiGateBtn').classList.remove('active');
+async function verifyPumpchiPin(){
+  const pin = document.getElementById('pumpchiPinInputStandalone').value.trim();
+  if (!pin) return;
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=checkPumpchiPin&pin=${encodeURIComponent(pin)}`);
+    const data = await res.json();
+    if (data.valid){
+      pumpchiCurrentUser = { name: data.name, fuel: data.fuel };
+      await pumpchiEnterWorkspace();
+    } else {
+      document.getElementById('pumpchiPinErrorStandalone').classList.remove('hidden');
+    }
+  }catch(err){ alert('خطا در بررسی پین‌کد — اتصال اینترنت یا لینک Apps Script را بررسی کن'); console.error(err); }
 }
-function pumpchiShowGate(){
-  document.getElementById('pumpchiAdminView').classList.add('hidden');
-  document.getElementById('pumpchiWorkspace').classList.add('hidden');
-  document.getElementById('pumpchiPinGate').classList.remove('hidden');
-  document.getElementById('pumpchiAdminBtn').classList.remove('active');
-  document.getElementById('pumpchiGateBtn').classList.add('active');
-  document.getElementById('pumpchiPinInput').value = '';
-  document.getElementById('pumpchiPinError').classList.add('hidden');
+
+async function pumpchiEnterWorkspace(){
+  document.getElementById('pumpchiPinGateStandalone').classList.add('hidden');
+  document.getElementById('pumpchiWorkspaceStandalone').classList.remove('hidden');
+  document.getElementById('pumpchiWelcomeStandalone').textContent = `خوش اومدی ${pumpchiCurrentUser.name} (${pumpchiCurrentUser.fuel})`;
+
+  if (!pumpchiDatePickerStandalone) pumpchiDatePickerStandalone = buildDatePicker('pumpchiDatePickerStandalone', todayJalaliStr());
+  else pumpchiDatePickerStandalone.set(todayJalaliStr());
+
+  const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
+  document.getElementById('pumpchiNozzleInputsStandalone').innerHTML = Array.from({length:n},(_,i)=>i+1).map(i=>
+    `<label class="space-y-1"><span class="text-slate-400">نازل ${i}</span><input id="pc_nozzle_s_${i}" type="number" class="w-full" placeholder="0"></label>`
+  ).join('');
+
+  ['pc_total_s','pc_jaygah_s','pc_naghdi_s','pc_kasri_s','pc_mokammel_s','pc_kol_s'].forEach(id=> document.getElementById(id).value = '');
+  document.getElementById('pc_desc_s').value = '';
+
+  await loadPumpchiAdmin();
+  renderPumpchiPersonal();
 }
+
 function pumpchiLogout(){
   pumpchiCurrentUser = null;
-  pumpchiShowGate();
+  document.getElementById('pumpchiWorkspaceStandalone').classList.add('hidden');
+  document.getElementById('pumpchiPinGateStandalone').classList.remove('hidden');
+  document.getElementById('pumpchiPinInputStandalone').value = '';
 }
 
 async function loadPumpchiAdmin(){
@@ -963,11 +1043,12 @@ async function loadPumpchiAdmin(){
       nozzles:[r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12]].map(toNum),
       total:toNum(r[13]), jaygah:toNum(r[14]), naghdi:toNum(r[15]), kasri:toNum(r[16]), mokammel:toNum(r[17]), kol:toNum(r[18]), desc:r[19]
     }));
-    pumpchiUsersLoaded = true;
-    const names = [...new Set(pumpchiAllShifts.map(r=>r.name))];
-    const sel = document.getElementById('pumpchiFilterName');
-    sel.innerHTML = '<option value="">همه‌ی پمپچی‌ها</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
-    renderPumpchiAdminTable();
+    const selEl = document.getElementById('pumpchiFilterName');
+    if (selEl){
+      const names = [...new Set(pumpchiAllShifts.map(r=>r.name))];
+      selEl.innerHTML = '<option value="">همه‌ی پمپچی‌ها</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
+      renderPumpchiAdminTable();
+    }
   }catch(err){ console.error(err); }
 }
 function renderPumpchiAdminTable(){
@@ -984,53 +1065,18 @@ function renderPumpchiAdminTable(){
   document.getElementById('pumpchiAdminCount').textContent = `${rows.length} رکورد`;
 }
 
-async function verifyPumpchiPin(){
-  const pin = document.getElementById('pumpchiPinInput').value.trim();
-  if (!pin) return;
-  try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=checkPumpchiPin&pin=${encodeURIComponent(pin)}`);
-    const data = await res.json();
-    if (data.valid){
-      pumpchiCurrentUser = { name: data.name, fuel: data.fuel };
-      pumpchiEnterWorkspace();
-    } else {
-      document.getElementById('pumpchiPinError').classList.remove('hidden');
-    }
-  }catch(err){ alert('خطا در بررسی پین‌کد'); console.error(err); }
-}
-
-function pumpchiEnterWorkspace(){
-  document.getElementById('pumpchiPinGate').classList.add('hidden');
-  document.getElementById('pumpchiAdminView').classList.add('hidden');
-  document.getElementById('pumpchiWorkspace').classList.remove('hidden');
-  document.getElementById('pumpchiWelcome').textContent = `خوش اومدی ${pumpchiCurrentUser.name} (${pumpchiCurrentUser.fuel})`;
-
-  if (!pumpchiDatePicker) pumpchiDatePicker = buildDatePicker('pumpchiDatePicker', todayJalaliStr());
-  else pumpchiDatePicker.set(todayJalaliStr());
-
-  const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
-  document.getElementById('pumpchiNozzleInputs').innerHTML = Array.from({length:n},(_,i)=>i+1).map(i=>
-    `<label class="space-y-1"><span class="text-slate-400">نازل ${i}</span><input id="pc_nozzle_${i}" type="number" class="w-full" placeholder="0"></label>`
-  ).join('');
-
-  ['pc_total','pc_jaygah','pc_naghdi','pc_kasri','pc_mokammel','pc_kol'].forEach(id=> document.getElementById(id).value = '');
-  document.getElementById('pc_desc').value = '';
-
-  renderPumpchiPersonal();
-}
-
 function renderPumpchiPersonal(){
   const mine = pumpchiAllShifts.filter(r=>r.name===pumpchiCurrentUser.name).sort((a,b)=>a.date<b.date?-1:1);
-  document.getElementById('pumpchiPersonalTableBody').innerHTML = mine.slice().reverse().map(r=>`
+  document.getElementById('pumpchiPersonalTableBodyStandalone').innerHTML = mine.slice().reverse().map(r=>`
     <tr class="border-b border-slate-800">
       <td class="p-2">${r.date}</td><td class="p-2">${r.shift}</td><td class="p-2">${r.total.toLocaleString('fa-IR')}</td>
       <td class="p-2">${r.jaygah.toLocaleString('fa-IR')}</td><td class="p-2">${r.naghdi.toLocaleString('fa-IR')}</td>
       <td class="p-2">${r.kasri.toLocaleString('fa-IR')}</td><td class="p-2">${r.mokammel.toLocaleString('fa-IR')}</td><td class="p-2">${r.kol.toLocaleString('fa-IR')}</td>
     </tr>`).join('') || `<tr><td colspan="8" class="p-4 text-slate-500">هنوز شیفتی ثبت نکردی</td></tr>`;
 
-  const ctx = document.getElementById('pumpchiPersonalChart').getContext('2d');
-  if (pumpchiChart) pumpchiChart.destroy();
-  pumpchiChart = new Chart(ctx, {type:'line', data:{
+  const ctx = document.getElementById('pumpchiPersonalChartStandalone').getContext('2d');
+  if (pumpchiChartStandalone) pumpchiChartStandalone.destroy();
+  pumpchiChartStandalone = new Chart(ctx, {type:'line', data:{
     labels: mine.map(r=>`${r.date} (${r.shift})`),
     datasets:[{label:'فروش کل', data: mine.map(r=>r.total), borderColor:'#14b8a6', backgroundColor:'rgba(20,184,166,.15)', tension:.3, fill:true, pointRadius:3}]
   }, options:{responsive:true, maintainAspectRatio:false,
@@ -1039,27 +1085,86 @@ function renderPumpchiPersonal(){
 }
 
 async function savePumpchiShift(){
-  const date = pumpchiDatePicker.get();
+  const date = pumpchiDatePickerStandalone.get();
   const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
   const nozzles = [];
   for (let i=1;i<=8;i++){
-    nozzles.push(i<=n ? toNum(document.getElementById('pc_nozzle_'+i)?.value) : '');
+    nozzles.push(i<=n ? toNum(document.getElementById('pc_nozzle_s_'+i)?.value) : '');
   }
   const row = [
-    date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift').value,
+    date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift_s').value,
     ...nozzles,
-    toNum(document.getElementById('pc_total').value), toNum(document.getElementById('pc_jaygah').value),
-    toNum(document.getElementById('pc_naghdi').value), toNum(document.getElementById('pc_kasri').value),
-    toNum(document.getElementById('pc_mokammel').value), toNum(document.getElementById('pc_kol').value),
-    document.getElementById('pc_desc').value
+    toNum(document.getElementById('pc_total_s').value), toNum(document.getElementById('pc_jaygah_s').value),
+    toNum(document.getElementById('pc_naghdi_s').value), toNum(document.getElementById('pc_kasri_s').value),
+    toNum(document.getElementById('pc_mokammel_s').value), toNum(document.getElementById('pc_kol_s').value),
+    document.getElementById('pc_desc_s').value
   ];
   try{
-    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'addPumpchiShift', row}) });
+    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'addPumpchiShift', row}) });
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error('unexpected response');
     alert('شیفت با موفقیت ذخیره شد');
-    await loadPumpchiAdmin();
-    renderPumpchiPersonal();
-    pumpchiEnterWorkspace();
-  }catch(err){ alert('خطا در ذخیره‌سازی'); console.error(err); }
+    await pumpchiEnterWorkspace();
+  }catch(err){ alert('خطا در ذخیره‌سازی — مطمئن شو Apps Script نسخه‌ی جدید رو Deploy کردی'); console.error(err); }
+}
+
+/* ================= PUMPCHI: ADMIN USER MANAGEMENT ================= */
+async function loadPumpchiUsers(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPumpchiUsers`);
+    const raw = await res.json();
+    const body = (raw.length && raw[0][0]==='پین‌کد') ? raw.slice(1) : raw;
+    pumpchiAllUsers = body.filter(r=>r[0]).map(r=>({ pin:String(r[0]), name:r[1], fuel:r[2] }));
+    renderPumpchiUsersTable();
+  }catch(err){ console.error(err); }
+}
+function renderPumpchiUsersTable(){
+  document.getElementById('pumpchiUsersTableBody').innerHTML = pumpchiAllUsers.map(u=>`
+    <tr class="border-b border-slate-800">
+      <td class="p-2">${u.name}</td><td class="p-2">${u.fuel}</td><td class="p-2 font-mono">${u.pin}</td>
+      <td class="p-2"><button onclick="pumpchiDeleteUser('${u.pin}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>`).join('') || `<tr><td colspan="4" class="p-4 text-slate-500">هنوز پمپچی‌ای ثبت نشده</td></tr>`;
+  document.getElementById('pumpchiUsersCount').textContent = `${pumpchiAllUsers.length} نفر`;
+}
+function pumpchiOpenAddUser(){
+  document.getElementById('pu_name').value = '';
+  document.getElementById('pu_fuel').value = 'بنزین';
+  document.getElementById('pu_pin').value = '';
+  document.getElementById('pumpchiUserError').classList.add('hidden');
+  document.getElementById('pumpchiUserModal').classList.remove('hidden');
+  document.getElementById('pumpchiUserModal').classList.add('flex');
+}
+function pumpchiCloseUserModal(){
+  document.getElementById('pumpchiUserModal').classList.add('hidden');
+  document.getElementById('pumpchiUserModal').classList.remove('flex');
+}
+async function pumpchiSaveUser(){
+  const name = document.getElementById('pu_name').value.trim();
+  const fuel = document.getElementById('pu_fuel').value;
+  const pin = document.getElementById('pu_pin').value.trim();
+  const errEl = document.getElementById('pumpchiUserError');
+  if (!name || !pin || pin.length < 4 || !/^[0-9۰-۹]+$/.test(pin)){
+    errEl.textContent = 'نام رو وارد کن و پین‌کد رو حداقل ۴ رقم بذار';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (pumpchiAllUsers.some(u=>u.pin===pin)){
+    errEl.textContent = 'این پین‌کد قبلاً برای یه نفر دیگه استفاده شده';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  try{
+    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'addPumpchiUser', row:[pin, name, fuel]}) });
+    pumpchiCloseUserModal();
+    await loadPumpchiUsers();
+  }catch(err){ errEl.textContent = 'خطا در ذخیره‌سازی'; errEl.classList.remove('hidden'); console.error(err); }
+}
+async function pumpchiDeleteUser(pin){
+  if (!confirm('حذف این پمپچی مطمئنی؟ (دیگه با این پین‌کد وارد نمیشه، ولی شیفت‌های قبلیش پاک نمیشن)')) return;
+  try{
+    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'deletePumpchiUser', pin}) });
+    await loadPumpchiUsers();
+  }catch(err){ alert('خطا در حذف'); console.error(err); }
 }
 
 
