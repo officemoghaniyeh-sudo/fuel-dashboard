@@ -163,7 +163,7 @@
         <div class="overflow-x-auto">
           <table class="w-full text-[11px] text-center whitespace-nowrap">
             <thead><tr class="text-slate-400 border-b border-slate-700">
-              <th class="p-2">تاریخ</th><th class="p-2">شیفت</th><th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">نقدی</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th>
+              <th class="p-2">تاریخ</th><th class="p-2">شیفت</th><th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">نقدی</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th><th class="p-2">توضیحات</th><th class="p-2">ویرایش‌ها</th><th class="p-2">عملیات</th>
             </tr></thead>
             <tbody id="pumpchiPersonalTableBodyStandalone"></tbody>
           </table>
@@ -366,7 +366,7 @@
         <table class="w-full text-[11px] text-center whitespace-nowrap">
           <thead><tr class="text-slate-400 border-b border-slate-700">
             <th class="p-2">تاریخ</th><th class="p-2">نام</th><th class="p-2">فرآورده</th><th class="p-2">شیفت</th>
-            <th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">نقدی</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th><th class="p-2">خرابی</th><th class="p-2">توضیحات</th><th class="p-2">اصلاح مدیر</th><th class="p-2">عملیات</th>
+            <th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">نقدی</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th><th class="p-2">خرابی</th><th class="p-2">توضیحات</th><th class="p-2">ویرایش‌ها</th><th class="p-2">عملیات</th>
           </tr></thead>
           <tbody id="pumpchiAdminTableBody"></tbody>
         </table>
@@ -411,17 +411,28 @@
   </div>
 </div>
 
-<!-- ADMIN CORRECTION MODAL -->
+<!-- CORRECTION MODAL (shared: admin correction / pumpchi self-edit) -->
 <div id="pumpchiCorrectModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
   <div class="glass-panel w-full max-w-lg p-6 space-y-3 border-amber-500/30 max-h-[90vh] overflow-y-auto">
     <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-      <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-amber-400"></i>اصلاح رکورد پمپچی</h3>
+      <h3 class="font-bold text-white text-base flex items-center gap-2" id="pumpchiCorrectModalTitle"><i class="fa-solid fa-pen-to-square text-amber-400"></i>اصلاح رکورد پمپچی</h3>
       <button onclick="pumpchiCloseCorrectModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
     </div>
-    <p class="text-[11px] text-slate-400">این رکورد قبلاً توسط پمپچی ثبت شده. هر تغییری بدی، به‌وضوح به‌عنوان «اصلاح‌شده توسط مدیر» روی رکورد ثبت میشه و توی تاریخچه هم می‌مونه.</p>
+    <p class="text-[11px] text-slate-400" id="pumpchiCorrectModalDesc">این رکورد قبلاً توسط پمپچی ثبت شده. هر تغییری بدی، به‌وضوح به‌عنوان «اصلاح‌شده توسط مدیر» روی رکورد ثبت میشه و توی تاریخچه هم می‌مونه.</p>
     <div class="grid grid-cols-2 gap-2 text-xs" id="pumpchiCorrectFields"></div>
-    <label class="space-y-1 block text-xs"><span class="text-amber-300">دلیل اصلاح (الزامی)</span><textarea id="pc_correct_note" rows="2" class="w-full text-xs"></textarea></label>
-    <button onclick="savePumpchiCorrection()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold py-2 rounded-xl text-xs">ثبت اصلاح</button>
+    <label class="space-y-1 block text-xs"><span class="text-amber-300" id="pcCorrectNoteLabel">دلیل اصلاح (الزامی)</span><textarea id="pc_correct_note" rows="2" class="w-full text-xs"></textarea></label>
+    <button onclick="savePumpchiCorrection()" id="pumpchiCorrectSubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold py-2 rounded-xl text-xs">ثبت اصلاح</button>
+  </div>
+</div>
+
+<!-- EDIT HISTORY MODAL (how many times / when a shift record was edited) -->
+<div id="pumpchiEditHistoryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
+  <div class="glass-panel w-full max-w-lg p-6 space-y-3 border-amber-500/30 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+      <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-amber-400"></i>تاریخچه‌ی ویرایش شیفت</h3>
+      <button onclick="pumpchiCloseEditHistory()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <div class="flex flex-col gap-2 text-xs" id="pumpchiEditHistoryList"></div>
   </div>
 </div>
 
@@ -1104,6 +1115,11 @@ function pumpchiBackToLogin(){
 /* ================= PUMPCHI MODULE (shared logic) ================= */
 const NOZZLE_COUNT = { 'بنزین': 8, 'نفت‌گاز': 4 };
 const NOZZLE_TOLERANCE = 2; // اختلاف مجاز بین (شماره آخر - شماره اول) و لیتر واردشده
+// شماره‌ی فیزیکی نازل‌ها روی جایگاه: نازل‌های نفت‌گاز به‌جای ۱..۴ به‌صورت ۹..۱۲ نمایش داده میشن
+// (توجه: این فقط برچسبِ نمایشیه؛ توی داده و آرایه‌ها همچنان با اندیس ۱..۴ ذخیره/پردازش میشه)
+function pumpchiNozzleLabel(fuel, i){
+  return fuel === 'نفت‌گاز' ? (i + 8) : i;
+}
 let pumpchiAllShifts = [];
 let pumpchiAllUsers = [];
 let pumpchiCurrentUser = null; // {name, fuel, salary}
@@ -1171,10 +1187,11 @@ async function verifyPumpchiPin(){
   }catch(err){ alert('خطا در بررسی پین‌کد — اتصال اینترنت یا لینک Apps Script را بررسی کن'); console.error(err); }
 }
 
-function nozzleFieldsHtml(i, prefix){
+function nozzleFieldsHtml(i, prefix, label){
+  label = (label === undefined) ? i : label;
   return `
   <div class="bg-slate-800/50 rounded-xl p-3" id="${prefix}${i}_wrap">
-    <p class="text-[11px] font-bold text-teal-300 mb-2">نازل ${i}</p>
+    <p class="text-[11px] font-bold text-teal-300 mb-2">نازل ${label}</p>
     <div class="grid grid-cols-2 gap-2">
       <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره اول وقت</span><input id="${prefix}${i}_start" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
       <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره آخر وقت</span><input id="${prefix}${i}_end" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
@@ -1239,7 +1256,8 @@ function renderBrokenChips(){
   const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
   document.getElementById('pumpchiBrokenNozzleChips').innerHTML = Array.from({length:n},(_,i)=>i+1).map(i=>{
     const active = pumpchiBrokenSelected.includes(i);
-    return `<button type="button" onclick="toggleBrokenNozzle(${i})" class="px-3 py-1 rounded-lg text-xs border ${active?'bg-rose-500 border-rose-500 text-white':'bg-slate-800 border-slate-600 text-slate-300'}">نازل ${i}</button>`;
+    const label = pumpchiNozzleLabel(pumpchiCurrentUser.fuel, i);
+    return `<button type="button" onclick="toggleBrokenNozzle(${i})" class="px-3 py-1 rounded-lg text-xs border ${active?'bg-rose-500 border-rose-500 text-white':'bg-slate-800 border-slate-600 text-slate-300'}">نازل ${label}</button>`;
   }).join('');
 }
 
@@ -1264,7 +1282,7 @@ async function pumpchiEnterWorkspace(){
   await loadPumpchiAdmin();
 
   const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
-  document.getElementById('pumpchiNozzleInputsStandalone').innerHTML = Array.from({length:n},(_,i)=>i+1).map(i=>nozzleFieldsHtml(i,'pc_n')).join('');
+  document.getElementById('pumpchiNozzleInputsStandalone').innerHTML = Array.from({length:n},(_,i)=>i+1).map(i=>nozzleFieldsHtml(i,'pc_n', pumpchiNozzleLabel(pumpchiCurrentUser.fuel, i))).join('');
   for (let i=1;i<=n;i++){
     document.getElementById(`pc_n${i}_end`).value = '';
     document.getElementById(`pc_n${i}_liter`).value = '';
@@ -1316,17 +1334,31 @@ function pumpchiLogout(){
   document.getElementById('pumpchiPinInputStandalone').value = '';
 }
 
+let pumpchiAllHistory = [];
+async function loadPumpchiHistory(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPumpchiHistory`);
+    const raw = await res.json();
+    const body = (raw.length && raw[0][0]==='زمان') ? raw.slice(1) : raw;
+    pumpchiAllHistory = body.filter(r=>r[3]).map(r=>({
+      time:r[0], type:r[1]||'', actor:r[2]||'', shiftId:r[3], oldData:r[4]||'', newData:r[5]||'', note:r[6]||''
+    })).sort((a,b)=> a.time < b.time ? 1 : -1);
+  }catch(err){ console.error(err); pumpchiAllHistory = []; }
+}
+
 async function loadPumpchiAdmin(){
   try{
     const res = await fetch(`${APPS_SCRIPT_URL}?action=getPumpchiShifts`);
     const raw = await res.json();
     const body = (raw.length && raw[0][0]==='ID') ? raw.slice(1) : raw;
+    await loadPumpchiHistory();
     pumpchiAllShifts = body.filter(r=>r[0]).map((r,idx)=>{
       const nozzles = [];
       for (let i=0;i<8;i++){
         const base = 5 + i*4;
         nozzles.push({ start:toNum(r[base]), end:toNum(r[base+1]), liter:toNum(r[base+2]), sale:toNum(r[base+3]) });
       }
+      const myEdits = pumpchiAllHistory.filter(h=>h.shiftId===r[0]);
       return {
         id:r[0], date:normalizeDate(r[1]), name:r[2], fuel:r[3], shift:r[4], _order:idx,
         nozzles,
@@ -1335,6 +1367,7 @@ async function loadPumpchiAdmin(){
         pasgah:toNum(r[42]), factor:toNum(r[43]), desc:r[44]||'',
         sysTotal:toNum(r[45]), cardTotal:toNum(r[46]), diff:toNum(r[47]),
         broken:r[48]||'', correctionNote:r[49]||'',
+        editCount: myEdits.length,
         _raw: r
       };
     });
@@ -1367,8 +1400,8 @@ function renderPumpchiAdminTable(){
       <td class="p-2">${r.pasgah.toLocaleString('fa-IR')}</td><td class="p-2">${r.factor.toLocaleString('fa-IR')}</td>
       <td class="p-2 text-amber-400">${r.broken?'⚠️':'-'}</td>
       <td class="p-2 max-w-[120px] truncate" title="${r.desc}">${r.desc||'-'}</td>
-      <td class="p-2">${r.correctionNote ? `<span class="text-amber-400" title="${r.correctionNote}"><i class="fa-solid fa-pen-to-square"></i></span>` : '-'}</td>
-      <td class="p-2"><button onclick="pumpchiOpenCorrect('${r.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button></td>
+      <td class="p-2">${r.editCount ? `<button onclick="pumpchiOpenEditHistory('${r.id}')" class="text-amber-400 hover:text-amber-300" title="مشاهده تاریخچه‌ی ویرایش"><i class="fa-solid fa-pen-to-square"></i> ${r.editCount.toLocaleString('fa-IR')}</button>` : '-'}</td>
+      <td class="p-2"><button onclick="pumpchiOpenCorrect('${r.id}','admin')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button></td>
     </tr>`).join('') || `<tr><td colspan="14" class="p-4 text-slate-500">رکوردی ثبت نشده</td></tr>`;
   document.getElementById('pumpchiAdminCount').textContent = `${rows.length} رکورد`;
 }
@@ -1425,7 +1458,7 @@ function pumpchiRenderDailyReport(){
     }
     const nozzleRows = r.nozzles.slice(0,nCount).map((nz,i)=>`
       <tr class="border-b border-slate-800/60">
-        <td class="p-1 text-teal-300 font-bold">${i+1}</td>
+        <td class="p-1 text-teal-300 font-bold">${pumpchiNozzleLabel(fuel, i+1)}</td>
         <td class="p-1">${nz.start.toLocaleString('fa-IR')}</td>
         <td class="p-1">${nz.end.toLocaleString('fa-IR')}</td>
         <td class="p-1">${nz.liter.toLocaleString('fa-IR')}</td>
@@ -1450,7 +1483,9 @@ function pumpchiRenderDailyReport(){
           <tbody>${nozzleRows}</tbody>
         </table>
       </div>
+      ${r.desc ? `<p class="text-slate-400 bg-slate-900/50 rounded-lg p-2"><i class="fa-solid fa-note-sticky text-cyan-400"></i> توضیحات پمپچی: <span class="text-slate-200">${r.desc}</span></p>` : ''}
       ${r.broken ? `<p class="text-amber-400">⚠️ ${r.broken}</p>` : ''}
+      ${r.editCount ? `<p class="text-amber-300"><i class="fa-solid fa-clock-rotate-left"></i> این شیفت ${r.editCount.toLocaleString('fa-IR')} بار ویرایش شده — <button onclick="pumpchiOpenEditHistory('${r.id}')" class="underline">مشاهده</button></p>` : ''}
     </div>`;
   }).join('');
 }
@@ -1462,7 +1497,10 @@ function renderPumpchiPersonal(){
       <td class="p-2">${r.date}</td><td class="p-2">${r.shift}</td><td class="p-2">${r.sysTotal.toLocaleString('fa-IR')}</td>
       <td class="p-2">${r.cardTotal.toLocaleString('fa-IR')}</td><td class="p-2">${(r.cash||0).toLocaleString('fa-IR')}</td><td class="p-2">${diffBadge(r.diff, r.fuel)}</td>
       <td class="p-2">${r.pasgah.toLocaleString('fa-IR')}</td><td class="p-2">${r.factor.toLocaleString('fa-IR')}</td>
-    </tr>`).join('') || `<tr><td colspan="8" class="p-4 text-slate-500">هنوز شیفتی ثبت نکردی</td></tr>`;
+      <td class="p-2 max-w-[120px] truncate" title="${r.desc}">${r.desc||'-'}</td>
+      <td class="p-2">${r.editCount ? `<button onclick="pumpchiOpenEditHistory('${r.id}')" class="text-amber-400 underline">${r.editCount.toLocaleString('fa-IR')} بار</button>` : '-'}</td>
+      <td class="p-2"><button onclick="pumpchiOpenCorrect('${r.id}','self')" class="text-cyan-400 hover:text-cyan-300" title="ویرایش این شیفت"><i class="fa-solid fa-pen"></i></button></td>
+    </tr>`).join('') || `<tr><td colspan="11" class="p-4 text-slate-500">هنوز شیفتی ثبت نکردی</td></tr>`;
 
   const ctx = document.getElementById('pumpchiPersonalChartStandalone').getContext('2d');
   if (pumpchiChartStandalone) pumpchiChartStandalone.destroy();
@@ -1527,7 +1565,7 @@ async function savePumpchiShift(){
   const cardTotal = cardVals.reduce((a,b)=>a+b,0);
   const cash = toNum(document.getElementById('pc_cash').value);
   const diff = (cardTotal + cash) - sysTotal;
-  const brokenText = pumpchiBrokenSelected.length ? `نازل‌های خراب: ${pumpchiBrokenSelected.join('، ')}${document.getElementById('pc_broken_desc').value ? ' — '+document.getElementById('pc_broken_desc').value : ''}` : (document.getElementById('pc_broken_desc').value || '');
+  const brokenText = pumpchiBrokenSelected.length ? `نازل‌های خراب: ${pumpchiBrokenSelected.map(i=>pumpchiNozzleLabel(pumpchiCurrentUser.fuel, i)).join('، ')}${document.getElementById('pc_broken_desc').value ? ' — '+document.getElementById('pc_broken_desc').value : ''}` : (document.getElementById('pc_broken_desc').value || '');
 
   const row = [
     date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift_s').value,
@@ -1547,11 +1585,66 @@ async function savePumpchiShift(){
   }catch(err){ alert('خطا در ذخیره‌سازی — مطمئن شو Apps Script نسخه‌ی جدید رو Deploy کردی'); console.error(err); }
 }
 
-/* ================= PUMPCHI: ADMIN CORRECTION ================= */
-function pumpchiOpenCorrect(id){
+/* ================= PUMPCHI: CORRECTION (admin OR self-edit by the pumpchi) ================= */
+let pumpchiCorrectingBy = 'admin'; // 'admin' | 'self'
+/* جعبه‌ی ورودی نازل داخل مودال اصلاح مدیر — با مقدار اولیه پر شده و برچسب فیزیکی درست (نفت‌گاز: ۹..۱۲) */
+function pumpchiCorrectNozzleBoxHtml(i, label, nz){
+  return `
+  <div class="bg-slate-800/50 rounded-xl p-3">
+    <p class="text-[11px] font-bold text-teal-300 mb-2">نازل ${label}</p>
+    <div class="grid grid-cols-2 gap-2">
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره اول وقت</span><input id="pcc_n${i}_start" type="text" inputmode="numeric" class="w-full" value="${nz.start.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره آخر وقت</span><input id="pcc_n${i}_end" type="text" inputmode="numeric" class="w-full" value="${nz.end.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">لیتر</span><input id="pcc_n${i}_liter" type="text" inputmode="numeric" class="w-full" value="${nz.liter.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">مبلغ فروش</span><input id="pcc_n${i}_sale" type="text" inputmode="numeric" class="w-full" value="${nz.sale.toLocaleString('en-US')}" oninput="formatThousands(this); pumpchiUpdateCorrectSysTotal();"></label>
+    </div>
+  </div>`;
+}
+/* با هر تغییر مبلغ فروش نازل‌ها توی مودال اصلاح مدیر، «مجموع فروش سیستمی» خودکار بازمحاسبه میشه (بازم قابل دست‌کاری دستی هست) */
+function pumpchiUpdateCorrectSysTotal(){
+  const r = pumpchiAllShifts.find(x=>x.id===pumpchiCorrectingId);
+  if (!r) return;
+  const nCount = NOZZLE_COUNT[r.fuel] || 8;
+  let sum = 0;
+  for (let i=1;i<=nCount;i++){
+    const el = document.getElementById(`pcc_n${i}_sale`);
+    if (el) sum += toNum(el.value);
+  }
+  const sysEl = document.getElementById('pcc_sys');
+  if (sysEl) sysEl.value = sum.toLocaleString('en-US');
+}
+function pumpchiOpenCorrect(id, by){
   const r = pumpchiAllShifts.find(x=>x.id===id);
   if (!r) return;
+  by = by === 'self' ? 'self' : 'admin';
+  if (by === 'self' && (!pumpchiCurrentUser || r.name !== pumpchiCurrentUser.name)){
+    alert('فقط می‌تونی شیفت‌های خودت رو ویرایش کنی'); return;
+  }
   pumpchiCorrectingId = id;
+  pumpchiCorrectingBy = by;
+
+  document.getElementById('pumpchiCorrectModalTitle').innerHTML = by==='self'
+    ? '<i class="fa-solid fa-pen-to-square text-amber-400"></i>ویرایش شیفت من'
+    : '<i class="fa-solid fa-pen-to-square text-amber-400"></i>اصلاح رکورد پمپچی';
+  document.getElementById('pumpchiCorrectModalDesc').textContent = by==='self'
+    ? 'اگه توی ثبت این شیفت اشتباه کردی، اینجا اصلاحش کن. تغییرت به‌وضوح به‌عنوان «ویرایش‌شده توسط خودت» ثبت میشه و مدیر می‌تونه تعداد و تاریخ ویرایش‌هات رو ببینه.'
+    : 'این رکورد قبلاً توسط پمپچی ثبت شده. هر تغییری بدی (از جمله اطلاعات نازل‌ها)، به‌وضوح به‌عنوان «اصلاح‌شده توسط مدیر» روی رکورد ثبت میشه و توی تاریخچه هم می‌مونه.';
+  document.getElementById('pcCorrectNoteLabel').textContent = by==='self' ? 'دلیل ویرایش (الزامی)' : 'دلیل اصلاح (الزامی)';
+  document.getElementById('pumpchiCorrectSubmitBtn').textContent = by==='self' ? 'ثبت ویرایش' : 'ثبت اصلاح';
+
+  let nozzleSection = '';
+  if (by === 'admin'){
+    const nCount = NOZZLE_COUNT[r.fuel] || 8;
+    const boxes = Array.from({length:nCount},(_,idx)=>idx+1)
+      .map(i => pumpchiCorrectNozzleBoxHtml(i, pumpchiNozzleLabel(r.fuel, i), r.nozzles[i-1] || {start:0,end:0,liter:0,sale:0}))
+      .join('');
+    nozzleSection = `
+      <div class="col-span-2 space-y-2 border-t border-slate-700 pt-3">
+        <p class="text-xs text-amber-300 font-bold"><i class="fa-solid fa-gas-pump"></i> اطلاعات نازل‌ها (قابل ویرایش توسط مدیر)</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${boxes}</div>
+      </div>`;
+  }
+
   document.getElementById('pumpchiCorrectFields').innerHTML = `
     <label class="space-y-1 col-span-2"><span class="text-slate-400">تاریخ / نام / شیفت</span><input class="w-full" value="${r.date} — ${r.name} — شیفت ${r.shift}" disabled></label>
     <label class="space-y-1"><span class="text-slate-400">کارتخوان ۱</span><input id="pcc_card1" type="text" inputmode="numeric" class="w-full" value="${r.card[0].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
@@ -1563,6 +1656,7 @@ function pumpchiOpenCorrect(id){
     <label class="space-y-1"><span class="text-slate-400">فاکتور جایگاه</span><input id="pcc_factor" type="text" inputmode="numeric" class="w-full" value="${r.factor.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
     <label class="space-y-1"><span class="text-slate-400">مجموع فروش سیستمی (در صورت نیاز اصلاح کن)</span><input id="pcc_sys" type="text" inputmode="numeric" class="w-full" value="${r.sysTotal.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
     <label class="space-y-1 col-span-2"><span class="text-slate-400">توضیحات</span><textarea id="pcc_desc" rows="2" class="w-full">${r.desc}</textarea></label>
+    ${nozzleSection}
   `;
   document.getElementById('pc_correct_note').value = '';
   document.getElementById('pumpchiCorrectModal').classList.remove('hidden');
@@ -1575,7 +1669,7 @@ function pumpchiCloseCorrectModal(){
 }
 async function savePumpchiCorrection(){
   const note = document.getElementById('pc_correct_note').value.trim();
-  if (!note){ alert('دلیل اصلاح رو بنویس'); return; }
+  if (!note){ alert(pumpchiCorrectingBy==='self' ? 'دلیل ویرایش رو بنویس' : 'دلیل اصلاح رو بنویس'); return; }
   const r = pumpchiAllShifts.find(x=>x.id===pumpchiCorrectingId);
   if (!r) return;
   const cardVals = [toNum(document.getElementById('pcc_card1').value), toNum(document.getElementById('pcc_card2').value), toNum(document.getElementById('pcc_card3').value), toNum(document.getElementById('pcc_card4').value)];
@@ -1583,9 +1677,22 @@ async function savePumpchiCorrection(){
   const cash = toNum(document.getElementById('pcc_cash').value);
   const sysTotal = toNum(document.getElementById('pcc_sys').value);
   const diff = (cardTotal + cash) - sysTotal;
-  // نازل‌ها دست‌نخورده می‌مونن؛ فقط فیلدهای مالی سطح-شیفت قابل اصلاحن
+  // برای اصلاح مدیر، اطلاعات نازل از فیلدهای فرم خونده میشه (قابل ویرایش)؛ برای ویرایش خود پمپچی، نازل‌ها دست‌نخورده می‌مونن
+  const nCount = NOZZLE_COUNT[r.fuel] || 8;
   const nozzleFlat = [];
-  r.nozzles.forEach(nz=> nozzleFlat.push(nz.start, nz.end, nz.liter, nz.sale));
+  for (let i=1;i<=8;i++){
+    if (pumpchiCorrectingBy==='admin' && i<=nCount){
+      nozzleFlat.push(
+        toNum(document.getElementById(`pcc_n${i}_start`).value),
+        toNum(document.getElementById(`pcc_n${i}_end`).value),
+        toNum(document.getElementById(`pcc_n${i}_liter`).value),
+        toNum(document.getElementById(`pcc_n${i}_sale`).value)
+      );
+    } else {
+      const nz = r.nozzles[i-1] || {start:0,end:0,liter:0,sale:0};
+      nozzleFlat.push(nz.start, nz.end, nz.liter, nz.sale);
+    }
+  }
   const row = [
     r.date, r.name, r.fuel, r.shift,
     ...nozzleFlat,
@@ -1596,10 +1703,41 @@ async function savePumpchiCorrection(){
     r.broken
   ];
   try{
-    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'correctPumpchiShift', id:r.id, row, note}) });
+    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({
+      action:'correctPumpchiShift', id:r.id, row, note,
+      by: pumpchiCorrectingBy,
+      actorName: pumpchiCorrectingBy==='self' ? (pumpchiCurrentUser ? pumpchiCurrentUser.name : r.name) : 'مدیر'
+    }) });
     pumpchiCloseCorrectModal();
     await loadPumpchiAdmin();
-  }catch(err){ alert('خطا در ثبت اصلاح'); console.error(err); }
+    if (pumpchiCorrectingBy==='self' && pumpchiCurrentUser) renderPumpchiPersonal();
+  }catch(err){ alert('خطا در ثبت'); console.error(err); }
+}
+
+/* ================= PUMPCHI: EDIT HISTORY VIEWER (how many times / when a record was edited) ================= */
+function pumpchiOpenEditHistory(id){
+  pumpchiRenderEditHistoryList(id);
+  document.getElementById('pumpchiEditHistoryModal').classList.remove('hidden');
+  document.getElementById('pumpchiEditHistoryModal').classList.add('flex');
+}
+function pumpchiCloseEditHistory(){
+  document.getElementById('pumpchiEditHistoryModal').classList.add('hidden');
+  document.getElementById('pumpchiEditHistoryModal').classList.remove('flex');
+}
+function pumpchiRenderEditHistoryList(id){
+  const r = pumpchiAllShifts.find(x=>x.id===id);
+  const edits = pumpchiAllHistory.filter(h=>h.shiftId===id); // already sorted newest-first
+  const el = document.getElementById('pumpchiEditHistoryList');
+  if (!edits.length){ el.innerHTML = '<p class="text-slate-500 p-3">تا الان ویرایشی برای این شیفت ثبت نشده</p>'; return; }
+  el.innerHTML = (r ? `<p class="text-slate-300 text-[11px] border-b border-slate-700 pb-2">${r.date} — ${r.name} — شیفت ${r.shift} — <b class="text-amber-300">${edits.length.toLocaleString('fa-IR')} بار ویرایش شده</b></p>` : '') +
+    edits.map(h=>{
+      let when; try{ when = new Date(h.time).toLocaleString('fa-IR'); }catch(e){ when = h.time; }
+      const bySelf = (h.type||'').includes('پمپچی');
+      return `<div class="bg-slate-900/50 border ${bySelf?'border-cyan-500/30':'border-amber-500/30'} rounded-lg p-2.5">
+        <p class="text-slate-300"><span class="font-bold ${bySelf?'text-cyan-300':'text-amber-300'}">${h.type||(bySelf?'ویرایش پمپچی':'اصلاح مدیر')}</span> — ${h.actor||'-'} — <bdi>${when}</bdi></p>
+        ${h.note ? `<p class="text-slate-400 mt-1">دلیل: ${h.note}</p>` : ''}
+      </div>`;
+    }).join('');
 }
 
 /* ================= PUMPCHI: ADMIN USER MANAGEMENT ================= */
