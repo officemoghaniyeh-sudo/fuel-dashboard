@@ -101,25 +101,33 @@
         <div>
           <p class="text-xs text-slate-400 mb-2">کارتخوان (تا ۴ دستگاه، هرکدوم که استفاده شده رو پر کن)</p>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            <input id="pc_card1" type="number" class="w-full" placeholder="کارتخوان ۱">
-            <input id="pc_card2" type="number" class="w-full" placeholder="کارتخوان ۲">
-            <input id="pc_card3" type="number" class="w-full" placeholder="کارتخوان ۳">
-            <input id="pc_card4" type="number" class="w-full" placeholder="کارتخوان ۴">
+            <input id="pc_card1" type="text" inputmode="numeric" class="w-full" placeholder="کارتخوان ۱">
+            <input id="pc_card2" type="text" inputmode="numeric" class="w-full" placeholder="کارتخوان ۲">
+            <input id="pc_card3" type="text" inputmode="numeric" class="w-full" placeholder="کارتخوان ۳">
+            <input id="pc_card4" type="text" inputmode="numeric" class="w-full" placeholder="کارتخوان ۴">
           </div>
         </div>
 
+        <div>
+          <p class="text-xs text-slate-400 mb-2"><i class="fa-solid fa-money-bill-wave text-emerald-400"></i> نقدی</p>
+          <input id="pc_cash" type="text" inputmode="numeric" class="w-full" placeholder="مبلغ نقدی دریافتی">
+        </div>
+
         <div class="bg-slate-900/60 rounded-xl p-3 flex flex-wrap justify-between gap-2 text-xs">
-          <span class="text-slate-400" id="pc_diff_label">وضعیت (کارتخوان − سیستم):</span>
+          <span class="text-slate-400" id="pc_diff_label">وضعیت (کارتخوان+نقدی − سیستم):</span>
           <span id="pc_diff_preview" class="font-bold">۰ تومان</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 text-xs">
-          <label class="space-y-1"><span class="text-slate-400">برش پاسگاه</span><input id="pc_pasgah" type="number" class="w-full" placeholder="0"></label>
-          <label class="space-y-1"><span class="text-slate-400">فاکتور جایگاه</span><input id="pc_factor" type="number" class="w-full" placeholder="0"></label>
+        <div class="bg-slate-900/40 rounded-xl p-3 space-y-3">
+          <p class="text-xs text-slate-400 font-bold">اطلاعات</p>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <label class="space-y-1"><span class="text-slate-400">برش پاسگاه</span><input id="pc_pasgah" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
+            <label class="space-y-1"><span class="text-slate-400">فاکتور جایگاه</span><input id="pc_factor" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
+          </div>
+          <label class="space-y-1 block"><span class="text-slate-400 text-xs">توضیحات و متفرقه</span>
+            <textarea id="pc_desc_s" rows="2" class="w-full text-xs"></textarea>
+          </label>
         </div>
-        <label class="space-y-1 block"><span class="text-slate-400 text-xs">توضیحات و متفرقه</span>
-          <textarea id="pc_desc_s" rows="2" class="w-full text-xs"></textarea>
-        </label>
 
         <div class="border-t border-slate-700 pt-3">
           <p class="text-xs text-slate-400 mb-2">ثبت خرابی نازل (اختیاری)</p>
@@ -140,6 +148,11 @@
         <div class="relative h-48"><canvas id="pumpchiKasriChart"></canvas></div>
       </div>
 
+      <div class="glass-panel p-5">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3"><i class="fa-solid fa-money-bill-wave text-emerald-400"></i>روند کارتخوان و نقدی</h3>
+        <div class="relative h-48"><canvas id="pumpchiCashChart"></canvas></div>
+      </div>
+
       <div class="glass-panel p-5" id="pumpchiAvardeAneamCardWrap">
         <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3" id="pumpchiAvardeAneamTitle"></h3>
         <div class="relative h-48"><canvas id="pumpchiAvardeAneamChart"></canvas></div>
@@ -150,7 +163,7 @@
         <div class="overflow-x-auto">
           <table class="w-full text-[11px] text-center whitespace-nowrap">
             <thead><tr class="text-slate-400 border-b border-slate-700">
-              <th class="p-2">تاریخ</th><th class="p-2">شیفت</th><th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th>
+              <th class="p-2">تاریخ</th><th class="p-2">شیفت</th><th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">نقدی</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th>
             </tr></thead>
             <tbody id="pumpchiPersonalTableBodyStandalone"></tbody>
           </table>
@@ -298,25 +311,46 @@
 
 <div id="page_pumpchi" class="space-y-6 hidden">
 
-  <section class="glass-panel p-5">
-    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-2"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i>مجموع خرابی‌های ثبت‌شده</h3>
-    <div class="flex flex-wrap gap-2 text-xs" id="pumpchiBrokenSummary"></div>
-  </section>
+  <!-- COMPACT ROW: مجموع خرابی‌ها + مدیریت پروفایل‌ها -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <section class="glass-panel p-4">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-bold text-slate-200 text-xs flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i>مجموع خرابی‌ها (۷ روز اخیر)</h3>
+        <button onclick="pumpchiOpenBrokenHistory()" class="text-[10px] text-slate-400 border border-slate-700 px-2 py-1 rounded-lg hover:text-teal-300 hover:border-teal-500/40"><i class="fa-solid fa-clock-rotate-left"></i> سوابق</button>
+      </div>
+      <div class="flex flex-wrap gap-1.5 text-[11px]" id="pumpchiBrokenSummary"></div>
+    </section>
 
-  <section class="glass-panel p-5 space-y-4">
+    <section class="glass-panel p-4 space-y-2">
+      <div class="flex flex-wrap justify-between items-center gap-2">
+        <h3 class="font-bold text-slate-200 text-xs flex items-center gap-2"><i class="fa-solid fa-user-gear text-teal-400"></i>مدیریت پروفایل‌های پمپچی</h3>
+        <button onclick="pumpchiOpenAddUser()" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-[10px]"><i class="fa-solid fa-plus"></i> افزودن</button>
+      </div>
+      <div class="overflow-x-auto max-h-40 overflow-y-auto">
+        <table class="w-full text-[10px] text-center">
+          <thead><tr class="text-slate-400 border-b border-slate-700">
+            <th class="p-1.5">نام</th><th class="p-1.5">فرآورده</th><th class="p-1.5">پین‌کد</th><th class="p-1.5">حقوق پایه</th><th class="p-1.5">عملیات</th>
+          </tr></thead>
+          <tbody id="pumpchiUsersTableBody"></tbody>
+        </table>
+      </div>
+      <p class="text-[10px] text-slate-400" id="pumpchiUsersCount"></p>
+    </section>
+  </div>
+
+  <!-- گزارش شیفت‌های یک روز -->
+  <section class="glass-panel p-5 space-y-3">
     <div class="flex flex-wrap justify-between items-center gap-3">
-      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-user-gear text-teal-400"></i>مدیریت پروفایل‌های پمپچی</h3>
-      <button onclick="pumpchiOpenAddUser()" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i> افزودن پمپچی جدید</button>
+      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-calendar-day text-cyan-400"></i>گزارش شیفت‌های یک روز</h3>
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <div class="flex gap-1" id="pumpchiReportDatePicker"></div>
+        <select id="pumpchiReportFuel" onchange="pumpchiRenderDailyReport()" class="text-xs">
+          <option value="بنزین">بنزین</option>
+          <option value="نفت‌گاز">نفت‌گاز</option>
+        </select>
+      </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-xs text-center">
-        <thead><tr class="text-slate-400 border-b border-slate-700">
-          <th class="p-2">نام</th><th class="p-2">فرآورده</th><th class="p-2">پین‌کد</th><th class="p-2">حقوق پایه</th><th class="p-2">عملیات</th>
-        </tr></thead>
-        <tbody id="pumpchiUsersTableBody"></tbody>
-      </table>
-    </div>
-    <p class="text-xs text-slate-400" id="pumpchiUsersCount"></p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="pumpchiDailyReportGrid"></div>
   </section>
 
   <!-- ADMIN VIEW -->
@@ -332,7 +366,7 @@
         <table class="w-full text-[11px] text-center whitespace-nowrap">
           <thead><tr class="text-slate-400 border-b border-slate-700">
             <th class="p-2">تاریخ</th><th class="p-2">نام</th><th class="p-2">فرآورده</th><th class="p-2">شیفت</th>
-            <th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th><th class="p-2">خرابی</th><th class="p-2">توضیحات</th><th class="p-2">اصلاح مدیر</th><th class="p-2">عملیات</th>
+            <th class="p-2">سیستمی</th><th class="p-2">کارتخوان</th><th class="p-2">نقدی</th><th class="p-2">وضعیت</th><th class="p-2">برش پاسگاه</th><th class="p-2">فاکتور جایگاه</th><th class="p-2">خرابی</th><th class="p-2">توضیحات</th><th class="p-2">اصلاح مدیر</th><th class="p-2">عملیات</th>
           </tr></thead>
           <tbody id="pumpchiAdminTableBody"></tbody>
         </table>
@@ -342,6 +376,22 @@
   </section>
 
 </div><!-- page_pumpchi -->
+
+<!-- سوابق کامل خرابی‌ها (بدون محدودیت هفتگی) -->
+<div id="pumpchiBrokenHistoryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
+  <div class="glass-panel w-full max-w-lg p-6 space-y-3 border-amber-500/30 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+      <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-amber-400"></i>سوابق کامل خرابی‌ها</h3>
+      <button onclick="pumpchiCloseBrokenHistory()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <div class="flex flex-wrap items-end gap-3 text-xs">
+      <div><p class="text-slate-400 mb-1">از تاریخ</p><div class="flex gap-1" id="pumpchiHistFromPicker"></div></div>
+      <div><p class="text-slate-400 mb-1">تا تاریخ</p><div class="flex gap-1" id="pumpchiHistToPicker"></div></div>
+      <button onclick="pumpchiRenderBrokenHistory()" class="preset-btn !bg-cyan-600 !text-white !border-cyan-600">اعمال بازه</button>
+    </div>
+    <div class="flex flex-col gap-2 text-xs" id="pumpchiBrokenHistoryList"></div>
+  </div>
+</div>
 
 <!-- ADD/EDIT PUMPCHI USER MODAL -->
 <div id="pumpchiUserModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
@@ -355,7 +405,7 @@
       <select id="pu_fuel" class="w-full"><option value="بنزین">بنزین (۸ نازل)</option><option value="نفت‌گاز">نفت‌گاز (۴ نازل)</option></select>
     </label>
     <label class="space-y-1 block text-xs"><span class="text-slate-400">پین‌کد (حداقل ۴ رقم)</span><input id="pu_pin" inputmode="numeric" class="w-full"></label>
-    <label class="space-y-1 block text-xs"><span class="text-slate-400">حقوق پایه (تومان)</span><input id="pu_salary" type="number" class="w-full" placeholder="0"></label>
+    <label class="space-y-1 block text-xs"><span class="text-slate-400">حقوق پایه (تومان)</span><input id="pu_salary" type="text" inputmode="numeric" class="w-full" placeholder="0" oninput="formatThousands(this)"></label>
     <p id="pumpchiUserError" class="text-rose-400 text-xs hidden"></p>
     <button onclick="pumpchiSaveUser()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-2 rounded-xl text-xs">ذخیره</button>
   </div>
@@ -1025,7 +1075,14 @@ function switchPage(name){
   document.getElementById('page_pumpchi').classList.toggle('hidden', name!=='pumpchi');
   document.getElementById('tabBtn_sales').classList.toggle('active', name==='sales');
   document.getElementById('tabBtn_pumpchi').classList.toggle('active', name==='pumpchi');
-  if (name==='pumpchi'){ loadPumpchiUsers(); loadPumpchiAdmin(); }
+  if (name==='pumpchi'){
+    if (!pumpchiReportDatePicker){
+      pumpchiReportDatePicker = buildDatePicker('pumpchiReportDatePicker', todayJalaliStr());
+      document.getElementById('pumpchiReportDatePicker').querySelectorAll('.dp-d,.dp-m,.dp-y').forEach(sel=> sel.onchange = pumpchiRenderDailyReport);
+    }
+    loadPumpchiUsers();
+    loadPumpchiAdmin();
+  }
 }
 
 /* ================= PUMPCHI: STANDALONE ENTRY (no admin password) ================= */
@@ -1054,8 +1111,50 @@ let pumpchiDatePickerStandalone = null;
 let pumpchiChartStandalone = null;
 let pumpchiKasriChartObj = null;
 let pumpchiAvardeAneamChartObj = null;
+let pumpchiCashChartObj = null;
 let pumpchiBrokenSelected = [];
 let pumpchiCorrectingId = null;
+let pumpchiReportDatePicker = null;
+let pumpchiHistFromPicker = null, pumpchiHistToPicker = null;
+
+/* ---- فرمت‌کننده‌ی سه‌رقمی (کاما) برای فیلدهای عددی پمپچی ---- */
+function formatThousands(el){
+  const raw = faToEnDigits(el.value).replace(/[^\d]/g,'');
+  el.value = raw ? Number(raw).toLocaleString('en-US') : '';
+}
+
+/* ---- زنجیره‌ی چرخشی شیفت‌ها: شماره آخر وقت هر شیفت = شماره اول وقت شیفت بعدی (چه اپراتورش عوض بشه چه نشه) ---- */
+const PUMPCHI_SHIFT_ORDER = {'اول':1,'دوم':2,'سوم':3};
+function pumpchiPrevSlot(date, order){
+  if (order > 1) return { date, order: order-1 };
+  return { date: addDaysToJalaliStr(date, -1), order: 3 };
+}
+function findChainStartReadings(fuel, date, shiftLabel, nozzleCount){
+  let curDate = date, curOrder = PUMPCHI_SHIFT_ORDER[shiftLabel] || 1;
+  for (let step=0; step<60; step++){
+    const prev = pumpchiPrevSlot(curDate, curOrder);
+    curDate = prev.date; curOrder = prev.order;
+    const label = Object.keys(PUMPCHI_SHIFT_ORDER).find(k=>PUMPCHI_SHIFT_ORDER[k]===curOrder);
+    const rec = pumpchiAllShifts.find(r=> r.fuel===fuel && r.date===curDate && r.shift===label);
+    if (rec){
+      const res = {};
+      for (let i=1;i<=nozzleCount;i++) res[i] = rec.nozzles[i-1] ? toNum(rec.nozzles[i-1].end) : 0;
+      return res;
+    }
+  }
+  const zero={}; for (let i=1;i<=nozzleCount;i++) zero[i]=0; return zero;
+}
+function refreshPumpchiNozzleStarts(){
+  if (!pumpchiCurrentUser || !pumpchiDatePickerStandalone) return;
+  const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
+  const date = pumpchiDatePickerStandalone.get();
+  const shift = document.getElementById('pc_shift_s').value;
+  const readings = findChainStartReadings(pumpchiCurrentUser.fuel, date, shift, n);
+  for (let i=1;i<=n;i++){
+    const el = document.getElementById(`pc_n${i}_start`);
+    if (el){ el.value = readings[i] ? readings[i].toLocaleString('en-US') : ''; checkNozzleConsistency(i); }
+  }
+}
 
 async function verifyPumpchiPin(){
   const pin = document.getElementById('pumpchiPinInputStandalone').value.trim();
@@ -1077,10 +1176,10 @@ function nozzleFieldsHtml(i, prefix){
   <div class="bg-slate-800/50 rounded-xl p-3" id="${prefix}${i}_wrap">
     <p class="text-[11px] font-bold text-teal-300 mb-2">نازل ${i}</p>
     <div class="grid grid-cols-2 gap-2">
-      <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره اول وقت</span><input id="${prefix}${i}_start" type="number" class="w-full" placeholder="0"></label>
-      <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره آخر وقت</span><input id="${prefix}${i}_end" type="number" class="w-full" placeholder="0"></label>
-      <label class="space-y-1"><span class="text-slate-500 text-[10px]">لیتر</span><input id="${prefix}${i}_liter" type="number" class="w-full" placeholder="0"></label>
-      <label class="space-y-1"><span class="text-slate-500 text-[10px]">مبلغ فروش</span><input id="${prefix}${i}_sale" type="number" class="w-full" placeholder="0"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره اول وقت</span><input id="${prefix}${i}_start" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">شماره آخر وقت</span><input id="${prefix}${i}_end" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">لیتر</span><input id="${prefix}${i}_liter" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
+      <label class="space-y-1"><span class="text-slate-500 text-[10px]">مبلغ فروش</span><input id="${prefix}${i}_sale" type="text" inputmode="numeric" class="w-full" placeholder="0"></label>
     </div>
     <p class="text-[10px] text-amber-400 mt-1 hidden" id="${prefix}${i}_warn"><i class="fa-solid fa-triangle-exclamation"></i> این عدد با شمارنده هم‌خونی نداره — لطفاً یه بار دیگه بررسی کن</p>
   </div>`;
@@ -1112,7 +1211,8 @@ function updateSysTotalPreview(){
 }
 function updateDiffPreview(sysTotal){
   const card = toNum(document.getElementById('pc_card1').value) + toNum(document.getElementById('pc_card2').value) + toNum(document.getElementById('pc_card3').value) + toNum(document.getElementById('pc_card4').value);
-  const diff = card - sysTotal;
+  const cash = toNum(document.getElementById('pc_cash')?.value);
+  const diff = (card + cash) - sysTotal;
   const el = document.getElementById('pc_diff_preview');
   const label = document.getElementById('pc_diff_label');
   const posWord = pumpchiCurrentUser.fuel === 'نفت‌گاز' ? 'انعام' : 'آورده';
@@ -1164,24 +1264,28 @@ async function pumpchiEnterWorkspace(){
   await loadPumpchiAdmin();
 
   const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
-  const lastReadings = findLastNozzleReadings(pumpchiCurrentUser.name, n);
   document.getElementById('pumpchiNozzleInputsStandalone').innerHTML = Array.from({length:n},(_,i)=>i+1).map(i=>nozzleFieldsHtml(i,'pc_n')).join('');
   for (let i=1;i<=n;i++){
-    document.getElementById(`pc_n${i}_start`).value = lastReadings[i] || '';
     document.getElementById(`pc_n${i}_end`).value = '';
     document.getElementById(`pc_n${i}_liter`).value = '';
     document.getElementById(`pc_n${i}_sale`).value = '';
-    ['start','end','liter'].forEach(f=> document.getElementById(`pc_n${i}_${f}`).oninput = ()=>checkNozzleConsistency(i));
-    document.getElementById(`pc_n${i}_sale`).oninput = updateSysTotalPreview;
+    ['start','end','liter'].forEach(f=> document.getElementById(`pc_n${i}_${f}`).oninput = (e)=>{ formatThousands(e.target); checkNozzleConsistency(i); });
+    document.getElementById(`pc_n${i}_sale`).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); };
   }
-  ['pc_card1','pc_card2','pc_card3','pc_card4'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).oninput = ()=>updateSysTotalPreview(); });
+  ['pc_card1','pc_card2','pc_card3','pc_card4','pc_cash'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); }; });
   document.getElementById('pc_pasgah').value = '';
   document.getElementById('pc_factor').value = '';
   document.getElementById('pc_desc_s').value = '';
   document.getElementById('pc_broken_desc').value = '';
   pumpchiBrokenSelected = [];
   renderBrokenChips();
+  refreshPumpchiNozzleStarts();
   updateSysTotalPreview();
+
+  // اتصال تغییر تاریخ/شیفت به بازسازی خودکار شماره‌ی اول‌وقت نازل‌ها (زنجیره‌ی چرخشی شیفت)
+  document.getElementById('pc_shift_s').onchange = refreshPumpchiNozzleStarts;
+  const dpEl = document.getElementById('pumpchiDatePickerStandalone');
+  dpEl.querySelectorAll('.dp-d,.dp-m,.dp-y').forEach(sel=> sel.onchange = refreshPumpchiNozzleStarts);
 
   renderPumpchiSalaryCard();
   renderPumpchiPersonal();
@@ -1227,9 +1331,10 @@ async function loadPumpchiAdmin(){
         id:r[0], date:normalizeDate(r[1]), name:r[2], fuel:r[3], shift:r[4], _order:idx,
         nozzles,
         card:[toNum(r[37]),toNum(r[38]),toNum(r[39]),toNum(r[40])],
-        pasgah:toNum(r[41]), factor:toNum(r[42]), desc:r[43]||'',
-        sysTotal:toNum(r[44]), cardTotal:toNum(r[45]), diff:toNum(r[46]),
-        broken:r[47]||'', correctionNote:r[48]||'',
+        cash:toNum(r[41]),
+        pasgah:toNum(r[42]), factor:toNum(r[43]), desc:r[44]||'',
+        sysTotal:toNum(r[45]), cardTotal:toNum(r[46]), diff:toNum(r[47]),
+        broken:r[48]||'', correctionNote:r[49]||'',
         _raw: r
       };
     });
@@ -1240,6 +1345,7 @@ async function loadPumpchiAdmin(){
       renderPumpchiAdminTable();
       renderPumpchiBrokenSummary();
     }
+    if (pumpchiReportDatePicker) pumpchiRenderDailyReport();
   }catch(err){ console.error(err); }
 }
 
@@ -1256,24 +1362,97 @@ function renderPumpchiAdminTable(){
   document.getElementById('pumpchiAdminTableBody').innerHTML = rows.map(r=>`
     <tr class="border-b border-slate-800 hover:bg-slate-800/40">
       <td class="p-2">${r.date}</td><td class="p-2">${r.name}</td><td class="p-2">${r.fuel}</td><td class="p-2">${r.shift}</td>
-      <td class="p-2">${r.sysTotal.toLocaleString('fa-IR')}</td><td class="p-2">${r.cardTotal.toLocaleString('fa-IR')}</td>
+      <td class="p-2">${r.sysTotal.toLocaleString('fa-IR')}</td><td class="p-2">${r.cardTotal.toLocaleString('fa-IR')}</td><td class="p-2">${(r.cash||0).toLocaleString('fa-IR')}</td>
       <td class="p-2">${diffBadge(r.diff, r.fuel)}</td>
       <td class="p-2">${r.pasgah.toLocaleString('fa-IR')}</td><td class="p-2">${r.factor.toLocaleString('fa-IR')}</td>
       <td class="p-2 text-amber-400">${r.broken?'⚠️':'-'}</td>
       <td class="p-2 max-w-[120px] truncate" title="${r.desc}">${r.desc||'-'}</td>
       <td class="p-2">${r.correctionNote ? `<span class="text-amber-400" title="${r.correctionNote}"><i class="fa-solid fa-pen-to-square"></i></span>` : '-'}</td>
       <td class="p-2"><button onclick="pumpchiOpenCorrect('${r.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button></td>
-    </tr>`).join('') || `<tr><td colspan="13" class="p-4 text-slate-500">رکوردی ثبت نشده</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="14" class="p-4 text-slate-500">رکوردی ثبت نشده</td></tr>`;
   document.getElementById('pumpchiAdminCount').textContent = `${rows.length} رکورد`;
 }
 
 function renderPumpchiBrokenSummary(){
-  const broken = pumpchiAllShifts.filter(r=>r.broken);
+  const t = todayJalaliStr();
+  const weekAgo = addDaysToJalaliStr(t, -7);
+  const broken = pumpchiAllShifts.filter(r=>r.broken && r.date >= weekAgo);
   const el = document.getElementById('pumpchiBrokenSummary');
-  if (!broken.length){ el.innerHTML = '<span class="text-slate-500">هیچ خرابی‌ای ثبت نشده</span>'; return; }
-  el.innerHTML = broken.slice().reverse().slice(0,20).map(r=>
-    `<span class="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-lg" title="${r.broken}">${r.date} — ${r.name}: ${r.broken}</span>`
-  ).join('') + (broken.length>20 ? `<span class="text-slate-500">و ${broken.length-20} مورد دیگر</span>` : '');
+  if (!broken.length){ el.innerHTML = '<span class="text-slate-500">در ۷ روز اخیر خرابی‌ای ثبت نشده</span>'; return; }
+  el.innerHTML = broken.slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,30).map(r=>
+    `<span class="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-lg" title="${r.broken}">${r.date} — ${r.name}: ${r.broken}</span>`
+  ).join('') + (broken.length>30 ? `<span class="text-slate-500">و ${broken.length-30} مورد دیگر — برای دیدن همه از دکمه‌ی سوابق استفاده کن</span>` : '');
+}
+
+/* ---- سوابق کامل خرابی‌ها (بدون محدودیت هفتگی، با بازه‌ی دلخواه) ---- */
+function pumpchiOpenBrokenHistory(){
+  const t = todayJalaliStr();
+  if (!pumpchiHistFromPicker) pumpchiHistFromPicker = buildDatePicker('pumpchiHistFromPicker', addDaysToJalaliStr(t,-90));
+  if (!pumpchiHistToPicker) pumpchiHistToPicker = buildDatePicker('pumpchiHistToPicker', t);
+  document.getElementById('pumpchiBrokenHistoryModal').classList.remove('hidden');
+  document.getElementById('pumpchiBrokenHistoryModal').classList.add('flex');
+  pumpchiRenderBrokenHistory();
+}
+function pumpchiCloseBrokenHistory(){
+  document.getElementById('pumpchiBrokenHistoryModal').classList.add('hidden');
+  document.getElementById('pumpchiBrokenHistoryModal').classList.remove('flex');
+}
+function pumpchiRenderBrokenHistory(){
+  const from = pumpchiHistFromPicker.get();
+  const to = pumpchiHistToPicker.get();
+  const rows = pumpchiAllShifts.filter(r=> r.broken && r.date>=from && r.date<=to).sort((a,b)=>a.date<b.date?1:-1);
+  const el = document.getElementById('pumpchiBrokenHistoryList');
+  if (!rows.length){ el.innerHTML = '<p class="text-slate-500 p-3">موردی در این بازه ثبت نشده</p>'; return; }
+  el.innerHTML = rows.map(r=>`
+    <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-2.5">
+      <p class="text-slate-300"><span class="font-bold text-teal-300">${r.date}</span> — ${r.name} (${r.fuel}, شیفت ${r.shift})</p>
+      <p class="text-amber-300 mt-1">${r.broken}</p>
+    </div>`).join('');
+}
+
+/* ---- گزارش شیفت‌های یک روز (اول/دوم/سوم کنار هم، با جزئیات نازل‌به‌نازل) ---- */
+function pumpchiRenderDailyReport(){
+  if (!pumpchiReportDatePicker) return;
+  const date = pumpchiReportDatePicker.get();
+  const fuel = document.getElementById('pumpchiReportFuel').value;
+  const shiftLabels = ['اول','دوم','سوم'];
+  const nCount = NOZZLE_COUNT[fuel] || 8;
+  document.getElementById('pumpchiDailyReportGrid').innerHTML = shiftLabels.map(label=>{
+    const r = pumpchiAllShifts.find(x=> x.date===date && x.fuel===fuel && x.shift===label);
+    if (!r){
+      return `<div class="bg-slate-900/40 border border-slate-700 rounded-xl p-3 text-center text-slate-500 text-xs">
+        <p class="font-bold text-slate-300 mb-2">شیفت ${label}</p>ثبت نشده</div>`;
+    }
+    const nozzleRows = r.nozzles.slice(0,nCount).map((nz,i)=>`
+      <tr class="border-b border-slate-800/60">
+        <td class="p-1 text-teal-300 font-bold">${i+1}</td>
+        <td class="p-1">${nz.start.toLocaleString('fa-IR')}</td>
+        <td class="p-1">${nz.end.toLocaleString('fa-IR')}</td>
+        <td class="p-1">${nz.liter.toLocaleString('fa-IR')}</td>
+        <td class="p-1">${nz.sale.toLocaleString('fa-IR')}</td>
+      </tr>`).join('');
+    return `<div class="bg-slate-900/40 border border-slate-700 rounded-xl p-3 space-y-2 text-[11px]">
+      <div class="flex justify-between items-center">
+        <p class="font-bold text-slate-200">شیفت ${label} — ${r.name}</p>
+        ${diffBadge(r.diff, r.fuel)}
+      </div>
+      <div class="grid grid-cols-2 gap-1 text-slate-400">
+        <span>سیستمی: <b class="text-slate-200">${r.sysTotal.toLocaleString('fa-IR')}</b></span>
+        <span>کارتخوان+نقدی: <b class="text-slate-200">${(r.cardTotal+(r.cash||0)).toLocaleString('fa-IR')}</b></span>
+        <span>برش پاسگاه: <b class="text-slate-200">${r.pasgah.toLocaleString('fa-IR')}</b></span>
+        <span>فاکتور جایگاه: <b class="text-slate-200">${r.factor.toLocaleString('fa-IR')}</b></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-center whitespace-nowrap">
+          <thead><tr class="text-slate-500 border-b border-slate-700">
+            <th class="p-1">نازل</th><th class="p-1">اول</th><th class="p-1">آخر</th><th class="p-1">لیتر</th><th class="p-1">فروش</th>
+          </tr></thead>
+          <tbody>${nozzleRows}</tbody>
+        </table>
+      </div>
+      ${r.broken ? `<p class="text-amber-400">⚠️ ${r.broken}</p>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function renderPumpchiPersonal(){
@@ -1281,9 +1460,9 @@ function renderPumpchiPersonal(){
   document.getElementById('pumpchiPersonalTableBodyStandalone').innerHTML = mine.slice().reverse().map(r=>`
     <tr class="border-b border-slate-800">
       <td class="p-2">${r.date}</td><td class="p-2">${r.shift}</td><td class="p-2">${r.sysTotal.toLocaleString('fa-IR')}</td>
-      <td class="p-2">${r.cardTotal.toLocaleString('fa-IR')}</td><td class="p-2">${diffBadge(r.diff, r.fuel)}</td>
+      <td class="p-2">${r.cardTotal.toLocaleString('fa-IR')}</td><td class="p-2">${(r.cash||0).toLocaleString('fa-IR')}</td><td class="p-2">${diffBadge(r.diff, r.fuel)}</td>
       <td class="p-2">${r.pasgah.toLocaleString('fa-IR')}</td><td class="p-2">${r.factor.toLocaleString('fa-IR')}</td>
-    </tr>`).join('') || `<tr><td colspan="7" class="p-4 text-slate-500">هنوز شیفتی ثبت نکردی</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="8" class="p-4 text-slate-500">هنوز شیفتی ثبت نکردی</td></tr>`;
 
   const ctx = document.getElementById('pumpchiPersonalChartStandalone').getContext('2d');
   if (pumpchiChartStandalone) pumpchiChartStandalone.destroy();
@@ -1302,6 +1481,18 @@ function renderPumpchiPersonal(){
   }, options:{responsive:true, maintainAspectRatio:false,
     scales:{y:{beginAtZero:true, ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:10}},grid:{color:'rgba(255,255,255,.05)'}}, x:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:8}},grid:{display:false}}},
     plugins:{legend:{display:false}}}});
+
+  const ctxCash = document.getElementById('pumpchiCashChart').getContext('2d');
+  if (pumpchiCashChartObj) pumpchiCashChartObj.destroy();
+  pumpchiCashChartObj = new Chart(ctxCash, {type:'bar', data:{
+    labels: mine.map(r=>`${r.date}`),
+    datasets:[
+      {label:'کارتخوان', data: mine.map(r=>r.cardTotal), backgroundColor:'#38bdf8', borderRadius:4},
+      {label:'نقدی', data: mine.map(r=>r.cash||0), backgroundColor:'#34d399', borderRadius:4}
+    ]
+  }, options:{responsive:true, maintainAspectRatio:false,
+    scales:{y:{beginAtZero:true, ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:10}},grid:{color:'rgba(255,255,255,.05)'}}, x:{ticks:{color:'#94a3b8',font:{family:'Vazirmatn',size:8}},grid:{display:false}}},
+    plugins:{legend:{display:true, labels:{color:'#cbd5e1',font:{family:'Vazirmatn',size:10}}}}}});
 
   const posWord = pumpchiCurrentUser.fuel==='نفت‌گاز' ? 'انعام' : 'آورده';
   document.getElementById('pumpchiAvardeAneamTitle').innerHTML = `<i class="fa-solid fa-chart-column text-teal-400"></i> روند ${posWord}`;
@@ -1334,13 +1525,14 @@ async function savePumpchiShift(){
   const sysTotal = updateSysTotalPreview();
   const cardVals = [toNum(document.getElementById('pc_card1').value), toNum(document.getElementById('pc_card2').value), toNum(document.getElementById('pc_card3').value), toNum(document.getElementById('pc_card4').value)];
   const cardTotal = cardVals.reduce((a,b)=>a+b,0);
-  const diff = cardTotal - sysTotal;
+  const cash = toNum(document.getElementById('pc_cash').value);
+  const diff = (cardTotal + cash) - sysTotal;
   const brokenText = pumpchiBrokenSelected.length ? `نازل‌های خراب: ${pumpchiBrokenSelected.join('، ')}${document.getElementById('pc_broken_desc').value ? ' — '+document.getElementById('pc_broken_desc').value : ''}` : (document.getElementById('pc_broken_desc').value || '');
 
   const row = [
     date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift_s').value,
     ...nozzleData,
-    ...cardVals,
+    ...cardVals, cash,
     toNum(document.getElementById('pc_pasgah').value), toNum(document.getElementById('pc_factor').value),
     document.getElementById('pc_desc_s').value,
     sysTotal, cardTotal, diff,
@@ -1362,13 +1554,14 @@ function pumpchiOpenCorrect(id){
   pumpchiCorrectingId = id;
   document.getElementById('pumpchiCorrectFields').innerHTML = `
     <label class="space-y-1 col-span-2"><span class="text-slate-400">تاریخ / نام / شیفت</span><input class="w-full" value="${r.date} — ${r.name} — شیفت ${r.shift}" disabled></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۱</span><input id="pcc_card1" type="number" class="w-full" value="${r.card[0]}"></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۲</span><input id="pcc_card2" type="number" class="w-full" value="${r.card[1]}"></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۳</span><input id="pcc_card3" type="number" class="w-full" value="${r.card[2]}"></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۴</span><input id="pcc_card4" type="number" class="w-full" value="${r.card[3]}"></label>
-    <label class="space-y-1"><span class="text-slate-400">برش پاسگاه</span><input id="pcc_pasgah" type="number" class="w-full" value="${r.pasgah}"></label>
-    <label class="space-y-1"><span class="text-slate-400">فاکتور جایگاه</span><input id="pcc_factor" type="number" class="w-full" value="${r.factor}"></label>
-    <label class="space-y-1"><span class="text-slate-400">مجموع فروش سیستمی (در صورت نیاز اصلاح کن)</span><input id="pcc_sys" type="number" class="w-full" value="${r.sysTotal}"></label>
+    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۱</span><input id="pcc_card1" type="text" inputmode="numeric" class="w-full" value="${r.card[0].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۲</span><input id="pcc_card2" type="text" inputmode="numeric" class="w-full" value="${r.card[1].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۳</span><input id="pcc_card3" type="text" inputmode="numeric" class="w-full" value="${r.card[2].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۴</span><input id="pcc_card4" type="text" inputmode="numeric" class="w-full" value="${r.card[3].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">نقدی</span><input id="pcc_cash" type="text" inputmode="numeric" class="w-full" value="${(r.cash||0).toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">برش پاسگاه</span><input id="pcc_pasgah" type="text" inputmode="numeric" class="w-full" value="${r.pasgah.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">فاکتور جایگاه</span><input id="pcc_factor" type="text" inputmode="numeric" class="w-full" value="${r.factor.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">مجموع فروش سیستمی (در صورت نیاز اصلاح کن)</span><input id="pcc_sys" type="text" inputmode="numeric" class="w-full" value="${r.sysTotal.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
     <label class="space-y-1 col-span-2"><span class="text-slate-400">توضیحات</span><textarea id="pcc_desc" rows="2" class="w-full">${r.desc}</textarea></label>
   `;
   document.getElementById('pc_correct_note').value = '';
@@ -1387,15 +1580,16 @@ async function savePumpchiCorrection(){
   if (!r) return;
   const cardVals = [toNum(document.getElementById('pcc_card1').value), toNum(document.getElementById('pcc_card2').value), toNum(document.getElementById('pcc_card3').value), toNum(document.getElementById('pcc_card4').value)];
   const cardTotal = cardVals.reduce((a,b)=>a+b,0);
+  const cash = toNum(document.getElementById('pcc_cash').value);
   const sysTotal = toNum(document.getElementById('pcc_sys').value);
-  const diff = cardTotal - sysTotal;
+  const diff = (cardTotal + cash) - sysTotal;
   // نازل‌ها دست‌نخورده می‌مونن؛ فقط فیلدهای مالی سطح-شیفت قابل اصلاحن
   const nozzleFlat = [];
   r.nozzles.forEach(nz=> nozzleFlat.push(nz.start, nz.end, nz.liter, nz.sale));
   const row = [
     r.date, r.name, r.fuel, r.shift,
     ...nozzleFlat,
-    ...cardVals,
+    ...cardVals, cash,
     toNum(document.getElementById('pcc_pasgah').value), toNum(document.getElementById('pcc_factor').value),
     document.getElementById('pcc_desc').value,
     sysTotal, cardTotal, diff,
