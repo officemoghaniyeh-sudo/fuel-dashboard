@@ -114,7 +114,7 @@
         </div>
 
         <div class="bg-slate-900/60 rounded-xl p-3 flex flex-wrap justify-between gap-2 text-xs">
-          <span class="text-slate-400" id="pc_diff_label">وضعیت (کارتخوان+نقدی − سیستم):</span>
+          <span class="text-slate-400" id="pc_diff_label">وضعیت (کارتخوان+نقدی+برش پاسگاه+فاکتور جایگاه − سیستم):</span>
           <span id="pc_diff_preview" class="font-bold">۰ تومان</span>
         </div>
 
@@ -1229,7 +1229,11 @@ function updateSysTotalPreview(){
 function updateDiffPreview(sysTotal){
   const card = toNum(document.getElementById('pc_card1').value) + toNum(document.getElementById('pc_card2').value) + toNum(document.getElementById('pc_card3').value) + toNum(document.getElementById('pc_card4').value);
   const cash = toNum(document.getElementById('pc_cash')?.value);
-  const diff = (card + cash) - sysTotal;
+  const pasgah = toNum(document.getElementById('pc_pasgah')?.value);
+  const factor = toNum(document.getElementById('pc_factor')?.value);
+  // برش پاسگاه و فاکتور جایگاه بخشی از فروشی هستن که پول نقد/کارتخوانش گرفته نشده،
+  // پس باید به سمت «آورده‌شده» اضافه بشن تا کسری واقعی درست حساب بشه
+  const diff = (card + cash + pasgah + factor) - sysTotal;
   const el = document.getElementById('pc_diff_preview');
   const label = document.getElementById('pc_diff_label');
   const posWord = pumpchiCurrentUser.fuel === 'نفت‌گاز' ? 'انعام' : 'آورده';
@@ -1293,6 +1297,8 @@ async function pumpchiEnterWorkspace(){
   ['pc_card1','pc_card2','pc_card3','pc_card4','pc_cash'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); }; });
   document.getElementById('pc_pasgah').value = '';
   document.getElementById('pc_factor').value = '';
+  document.getElementById('pc_pasgah').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); };
+  document.getElementById('pc_factor').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); };
   document.getElementById('pc_desc_s').value = '';
   document.getElementById('pc_broken_desc').value = '';
   pumpchiBrokenSelected = [];
@@ -1564,14 +1570,17 @@ async function savePumpchiShift(){
   const cardVals = [toNum(document.getElementById('pc_card1').value), toNum(document.getElementById('pc_card2').value), toNum(document.getElementById('pc_card3').value), toNum(document.getElementById('pc_card4').value)];
   const cardTotal = cardVals.reduce((a,b)=>a+b,0);
   const cash = toNum(document.getElementById('pc_cash').value);
-  const diff = (cardTotal + cash) - sysTotal;
+  const pasgahVal = toNum(document.getElementById('pc_pasgah').value);
+  const factorVal = toNum(document.getElementById('pc_factor').value);
+  // برش پاسگاه و فاکتور جایگاه باید از کسری کم بشن (یعنی به سمت آورده‌شده اضافه بشن)
+  const diff = (cardTotal + cash + pasgahVal + factorVal) - sysTotal;
   const brokenText = pumpchiBrokenSelected.length ? `نازل‌های خراب: ${pumpchiBrokenSelected.map(i=>pumpchiNozzleLabel(pumpchiCurrentUser.fuel, i)).join('، ')}${document.getElementById('pc_broken_desc').value ? ' — '+document.getElementById('pc_broken_desc').value : ''}` : (document.getElementById('pc_broken_desc').value || '');
 
   const row = [
     date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift_s').value,
     ...nozzleData,
     ...cardVals, cash,
-    toNum(document.getElementById('pc_pasgah').value), toNum(document.getElementById('pc_factor').value),
+    pasgahVal, factorVal,
     document.getElementById('pc_desc_s').value,
     sysTotal, cardTotal, diff,
     brokenText, ""
@@ -1676,7 +1685,10 @@ async function savePumpchiCorrection(){
   const cardTotal = cardVals.reduce((a,b)=>a+b,0);
   const cash = toNum(document.getElementById('pcc_cash').value);
   const sysTotal = toNum(document.getElementById('pcc_sys').value);
-  const diff = (cardTotal + cash) - sysTotal;
+  const pasgahVal = toNum(document.getElementById('pcc_pasgah').value);
+  const factorVal = toNum(document.getElementById('pcc_factor').value);
+  // برش پاسگاه و فاکتور جایگاه باید از کسری کم بشن (یعنی به سمت آورده‌شده اضافه بشن)
+  const diff = (cardTotal + cash + pasgahVal + factorVal) - sysTotal;
   // برای اصلاح مدیر، اطلاعات نازل از فیلدهای فرم خونده میشه (قابل ویرایش)؛ برای ویرایش خود پمپچی، نازل‌ها دست‌نخورده می‌مونن
   const nCount = NOZZLE_COUNT[r.fuel] || 8;
   const nozzleFlat = [];
@@ -1697,7 +1709,7 @@ async function savePumpchiCorrection(){
     r.date, r.name, r.fuel, r.shift,
     ...nozzleFlat,
     ...cardVals, cash,
-    toNum(document.getElementById('pcc_pasgah').value), toNum(document.getElementById('pcc_factor').value),
+    pasgahVal, factorVal,
     document.getElementById('pcc_desc').value,
     sysTotal, cardTotal, diff,
     r.broken
