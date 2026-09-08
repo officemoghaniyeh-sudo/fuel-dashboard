@@ -1322,15 +1322,24 @@ function renderPumpchiSalaryCard(){
   const sumKasri = thisMonth.reduce((s,r)=> s + (r.diff<0 ? Math.abs(r.diff) : 0), 0);
   const sumPos = thisMonth.reduce((s,r)=> s + (r.diff>0 ? r.diff : 0), 0);
   const posWord = pumpchiCurrentUser.fuel==='نفت‌گاز' ? 'انعام' : 'آورده';
-  const net = pumpchiCurrentUser.salary - sumKasri + sumPos;
+  const isGazoil = pumpchiCurrentUser.fuel === 'نفت‌گاز';
+
+  // بنزین: بدون تغییر — حقوق پایه‌ی ثابت، منهای کسری، به‌علاوه‌ی آورده
+  // گازوئیل/نفت‌گاز: حقوق پایه اصلاً دخیل نیست؛ ملاک فقط «انعام»ه —
+  // ابتدا ۴٪ مالیات از جمع انعام ماه کم میشه، بعد باقیمونده تقسیم بر ۲ میشه
+  const net = isGazoil ? ((sumPos * 0.96) / 2) : (pumpchiCurrentUser.salary - sumKasri + sumPos);
+  const netLabel = isGazoil ? 'میزان دریافتی تقریبی این ماه' : 'تخمین خالص';
+
   document.getElementById('pumpchiSalaryCard').innerHTML = `
     <p class="text-xs text-slate-400 mb-2">وضعیت حقوق این ماه</p>
     <div class="grid grid-cols-2 gap-2 text-xs">
-      <div class="bg-slate-900/50 rounded-lg p-2"><p class="text-slate-500 text-[10px]">حقوق پایه</p><p class="font-bold text-white">${pumpchiCurrentUser.salary.toLocaleString('fa-IR')}</p></div>
+      ${isGazoil ? '' : `<div class="bg-slate-900/50 rounded-lg p-2"><p class="text-slate-500 text-[10px]">حقوق پایه</p><p class="font-bold text-white">${pumpchiCurrentUser.salary.toLocaleString('fa-IR')}</p></div>`}
       <div class="bg-slate-900/50 rounded-lg p-2"><p class="text-slate-500 text-[10px]">جمع کسری این ماه</p><p class="font-bold text-rose-400">${sumKasri.toLocaleString('fa-IR')}</p></div>
       <div class="bg-slate-900/50 rounded-lg p-2"><p class="text-slate-500 text-[10px]">جمع ${posWord} این ماه</p><p class="font-bold text-teal-400">${sumPos.toLocaleString('fa-IR')}</p></div>
-      <div class="bg-slate-900/50 rounded-lg p-2"><p class="text-slate-500 text-[10px]">تخمین خالص</p><p class="font-bold text-white">${net.toLocaleString('fa-IR')}</p></div>
-    </div>`;
+      <div class="bg-slate-900/50 rounded-lg p-2 ${isGazoil?'col-span-2':''}"><p class="text-slate-500 text-[10px]">${netLabel}</p><p class="font-bold text-white">${Math.round(net).toLocaleString('fa-IR')}</p></div>
+    </div>
+    ${isGazoil ? `<p class="text-[10px] text-slate-500 mt-2">فرمول: (جمع انعام این ماه × ۹۶٪) ÷ ۲ — یعنی بعد از کسر ۴٪ مالیات، نصف باقیمونده</p>` : ''}
+  `;
 }
 
 function pumpchiLogout(){
@@ -1407,7 +1416,10 @@ function renderPumpchiAdminTable(){
       <td class="p-2 text-amber-400">${r.broken?'⚠️':'-'}</td>
       <td class="p-2 max-w-[120px] truncate" title="${r.desc}">${r.desc||'-'}</td>
       <td class="p-2">${r.editCount ? `<button onclick="pumpchiOpenEditHistory('${r.id}')" class="text-amber-400 hover:text-amber-300" title="مشاهده تاریخچه‌ی ویرایش"><i class="fa-solid fa-pen-to-square"></i> ${r.editCount.toLocaleString('fa-IR')}</button>` : '-'}</td>
-      <td class="p-2"><button onclick="pumpchiOpenCorrect('${r.id}','admin')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button></td>
+      <td class="p-2">
+        <button onclick="pumpchiOpenCorrect('${r.id}','admin')" class="text-cyan-400 hover:text-cyan-300" title="ویرایش این شیفت"><i class="fa-solid fa-pen"></i></button>
+        <button onclick="pumpchiDeleteShift('${r.id}')" class="text-rose-400 hover:text-rose-300 mr-2" title="حذف این شیفت"><i class="fa-solid fa-trash"></i></button>
+      </td>
     </tr>`).join('') || `<tr><td colspan="14" class="p-4 text-slate-500">رکوردی ثبت نشده</td></tr>`;
   document.getElementById('pumpchiAdminCount').textContent = `${rows.length} رکورد`;
 }
@@ -1724,6 +1736,20 @@ async function savePumpchiCorrection(){
     await loadPumpchiAdmin();
     if (pumpchiCorrectingBy==='self' && pumpchiCurrentUser) renderPumpchiPersonal();
   }catch(err){ alert('خطا در ثبت'); console.error(err); }
+}
+
+/* ================= PUMPCHI: DELETE SHIFT (manager only) ================= */
+async function pumpchiDeleteShift(id){
+  const r = pumpchiAllShifts.find(x=>x.id===id);
+  if (!r) return;
+  const ok = confirm(`مطمئنی می‌خوای این شیفت رو حذف کنی؟\n${r.date} — ${r.name} — شیفت ${r.shift}\n\nاین عملیات قابل بازگشت نیست.`);
+  if (!ok) return;
+  try{
+    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({
+      action:'deletePumpchiShift', id, actorName:'مدیر'
+    }) });
+    await loadPumpchiAdmin();
+  }catch(err){ alert('خطا در حذف'); console.error(err); }
 }
 
 /* ================= PUMPCHI: EDIT HISTORY VIEWER (how many times / when a record was edited) ================= */
