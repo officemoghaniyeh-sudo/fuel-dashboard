@@ -215,6 +215,10 @@
         <button onclick="pumpchiLogout(true)" class="text-xs text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
       </div>
 
+      <div id="pumpchiDraftNotice" class="hidden status-badge badge-info !text-xs !py-2 !px-3 w-full justify-center">
+        <i class="fa-solid fa-clock-rotate-left"></i> اطلاعاتی که قبل از قطع‌شدن پر کرده بودی، خودکار بازیابی شد — لطفاً یه نگاه بنداز و بعد ذخیره کن
+      </div>
+
       <!-- Salary summary card -->
       <div class="glass-panel p-4 bg-gradient-to-l from-teal-500/10 to-transparent" id="pumpchiSalaryCard"></div>
 
@@ -293,9 +297,10 @@
           <input id="pc_broken_desc" class="w-full text-xs" placeholder="توضیح خرابی (اختیاری)">
         </div>
 
-        <button onclick="savePumpchiShift()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold py-3 rounded-xl text-sm shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-floppy-disk"></i>ذخیره شیفت
+        <button id="pcSaveBtn" onclick="savePumpchiShift()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold py-3 rounded-xl text-sm shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+          <i id="pcSaveBtnIcon" class="fa-solid fa-floppy-disk"></i><span id="pcSaveBtnText">ذخیره شیفت</span>
         </button>
+        <p class="text-[10px] text-slate-500 text-center -mt-2">اطلاعاتی که تایپ می‌کنی خودکار به‌صورت پیش‌نویس ذخیره میشه — حتی اگه صفحه ببنده یا اینترنت قطع بشه، از دست نمی‌ره</p>
       </div>
 
       <div class="glass-panel p-5">
@@ -821,13 +826,157 @@ function normalizeDate(v){
   return v;
 }
 
+/* ================= FETCH هوشمند به Apps Script (با تلاش مجدد خودکار + تشخیص دقیق خطا) =================
+   خطای «اتصال به گوگل‌شیت» که گاهی رخ می‌ده معمولاً یکی از این دلیل‌هاست:
+   ۱) اسکریپت گوگل تازه بیدار شده (cold start) و کند جواب داده — با یک تلاش مجدد خودکار حل میشه.
+   ۲) محدودیت نرخ درخواست گوگل (quota) — پیام واضح نشون داده میشه.
+   ۳) دیپلوی Apps Script به‌روز نیست یا دسترسیش «Anyone» نیست — به‌جای JSON یه صفحه‌ی HTML لاگین/خطا برمی‌گرده که پارسش fail میشه؛ این تابع دقیقاً همینو تشخیص میده. */
+async function fetchAppsScriptJSON(url, options={}, retryOpts={}){
+  const { retries = 1, retryDelay = 1300, timeoutMs = 20000 } = retryOpts;
+  let lastErr;
+  for (let attempt=0; attempt<=retries; attempt++){
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, {...options, signal: controller.signal});
+      clearTimeout(timer);
+      const text = await res.text();
+      if (!res.ok){
+        throw new Error(`سرور با کد وضعیت ${res.status} پاسخ داد`);
+      }
+      try{
+        return JSON.parse(text);
+      }catch(parseErr){
+        throw new Error('پاسخ سرور JSON نبود — احتمالاً دیپلوی Apps Script به‌روز نیست، دسترسیش روی «Anyone» نیست، یا نیاز به Authorize مجدد داره');
+      }
+    }catch(err){
+      clearTimeout(timer);
+      lastErr = (err && err.name === 'AbortError') ? new Error('پاسخ سرور بیش از حد طول کشید (timeout) — احتمالاً Apps Script تازه بیدار شده') : err;
+      if (attempt < retries){ await new Promise(r=>setTimeout(r, retryDelay)); continue; }
+    }
+  }
+  throw lastErr;
+}
+
+/* درخواست POST به Apps Script با یک تلاش مجدد خودکار (برای ثبت/ویرایش که خطای «هی می‌زنم ثبت نمیشه» رو کم کنه).
+   نکته: چون هر تلاش مجدد می‌تونه در موارد نادر یه رکورد تکراری بسازه (اگه تلاش اول واقعاً روی سرور ثبت شده باشه ولی
+   پاسخش به مرورگر نرسیده باشه)، مدیر ابزار حذف/اصلاح رکورد رو داره تا این موارد نادر رو راحت پاک کنه —
+   این خیلی بهتر از اینه که شیفت یه پمپچی کلاً از دست بره و مجبور بشه دوباره از صفر وارد کنه. */
+async function postAppsScriptJSON(url, body, retryOpts={}){
+  const { retries = 1, retryDelay = 1500, timeoutMs = 20000 } = retryOpts;
+  let lastErr;
+  for (let attempt=0; attempt<=retries; attempt++){
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body), signal: controller.signal });
+      clearTimeout(timer);
+      const text = await res.text();
+      if (!res.ok) throw new Error(`سرور با کد وضعیت ${res.status} پاسخ داد`);
+      let result;
+      try{ result = JSON.parse(text); }
+      catch(parseErr){ throw new Error('پاسخ سرور JSON نبود — دیپلوی Apps Script رو بررسی کن'); }
+      if (result.status !== 'ok') throw new Error('پاسخ غیرمنتظره از سرور');
+      return result;
+    }catch(err){
+      clearTimeout(timer);
+      lastErr = (err && err.name === 'AbortError') ? new Error('پاسخ سرور بیش از حد طول کشید — دوباره امتحان کن') : err;
+      if (attempt < retries){ await new Promise(r=>setTimeout(r, retryDelay)); continue; }
+    }
+  }
+  throw lastErr;
+}
+
+/* ============ نشستِ ورودِ پمپچی + پیش‌نویسِ فرم — هر دو در localStorage، برای مقاومت در برابر
+   «پریدن بیرون» (وقتی مرورگر موبایل تبِ صفحه رو موقع رفتن به پس‌زمینه از حافظه پاک می‌کنه و رفرش میشه) ============ */
+const PUMPCHI_SESSION_KEY = 'pumpchi_session_v1';
+const PUMPCHI_DRAFT_KEY = 'pumpchi_draft_v1';
+function pumpchiSaveSession(user){ try{ localStorage.setItem(PUMPCHI_SESSION_KEY, JSON.stringify(user)); }catch(e){} }
+function pumpchiLoadSession(){ try{ const raw = localStorage.getItem(PUMPCHI_SESSION_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; } }
+function pumpchiClearSession(){ try{ localStorage.removeItem(PUMPCHI_SESSION_KEY); }catch(e){} }
+
+function pumpchiCollectDraft(){
+  if (!pumpchiCurrentUser || !pumpchiDatePickerStandalone) return null;
+  const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
+  const nozzles = [];
+  for (let i=1;i<=n;i++){
+    const s=document.getElementById(`pc_n${i}_start`), e=document.getElementById(`pc_n${i}_end`), l=document.getElementById(`pc_n${i}_liter`), sl=document.getElementById(`pc_n${i}_sale`);
+    if (!s) continue;
+    nozzles.push({ start:s.value||'', end:e?.value||'', liter:l?.value||'', sale:sl?.value||'' });
+  }
+  return {
+    user: pumpchiCurrentUser.name,
+    date: pumpchiDatePickerStandalone.get(),
+    shift: document.getElementById('pc_shift_s')?.value || 'اول',
+    nozzles,
+    card: [1,2,3,4].map(i=> document.getElementById(`pc_card${i}`)?.value || ''),
+    cash: document.getElementById('pc_cash')?.value || '',
+    pasgah: document.getElementById('pc_pasgah')?.value || '',
+    factor: document.getElementById('pc_factor')?.value || '',
+    desc: document.getElementById('pc_desc_s')?.value || '',
+    broken: (pumpchiBrokenSelected||[]).slice(),
+    brokenDesc: document.getElementById('pc_broken_desc')?.value || '',
+    savedAt: Date.now()
+  };
+}
+let pumpchiDraftTimer = null;
+function pumpchiScheduleDraftSave(){
+  clearTimeout(pumpchiDraftTimer);
+  pumpchiDraftTimer = setTimeout(()=>{
+    const draft = pumpchiCollectDraft();
+    if (draft){ try{ localStorage.setItem(PUMPCHI_DRAFT_KEY, JSON.stringify(draft)); }catch(e){} }
+  }, 400);
+}
+function pumpchiClearDraft(){ try{ localStorage.removeItem(PUMPCHI_DRAFT_KEY); }catch(e){} }
+
+// دقیقاً همون لحظه‌ای که مرورگر موبایل ممکنه صفحه رو به پس‌زمینه ببره و بعداً کامل رفرشش کنه،
+// پیش‌نویس رو فوری (بدون معطلی debounce) ذخیره کن تا چیزی گم نشه
+function pumpchiFlushDraftNow(){
+  if (document.hidden !== undefined && document.hidden === false) return; // فقط وقتی داره پنهان/بسته میشه
+  clearTimeout(pumpchiDraftTimer);
+  const draft = pumpchiCollectDraft();
+  if (draft){ try{ localStorage.setItem(PUMPCHI_DRAFT_KEY, JSON.stringify(draft)); }catch(e){} }
+}
+document.addEventListener('visibilitychange', pumpchiFlushDraftNow);
+window.addEventListener('pagehide', pumpchiFlushDraftNow);
+function pumpchiLoadDraft(){ try{ const raw = localStorage.getItem(PUMPCHI_DRAFT_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; } }
+
+// همین که وارد فضای کاری شد، اگه پیش‌نویسِ ذخیره‌نشده‌ی خودِ همین کاربر (کمتر از ۲۴ ساعت پیش) پیدا شد، خودکار برش می‌گردونه
+function pumpchiRestoreDraftIfMatching(){
+  const draft = pumpchiLoadDraft();
+  if (!draft || !pumpchiCurrentUser) return;
+  if (draft.user !== pumpchiCurrentUser.name) return;
+  if (!draft.savedAt || (Date.now() - draft.savedAt) > 24*60*60*1000){ pumpchiClearDraft(); return; }
+
+  if (draft.date) pumpchiDatePickerStandalone.set(draft.date);
+  if (draft.shift) document.getElementById('pc_shift_s').value = draft.shift;
+
+  const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
+  (draft.nozzles||[]).forEach((nz,idx)=>{
+    const i = idx+1; if (i>n) return;
+    ['start','end','liter','sale'].forEach(f=>{ const el = document.getElementById(`pc_n${i}_${f}`); if (el && nz[f]!==undefined) el.value = nz[f]; });
+    checkNozzleConsistency(i);
+  });
+  (draft.card||[]).forEach((v,idx)=>{ const el = document.getElementById(`pc_card${idx+1}`); if (el) el.value = v; });
+  if (document.getElementById('pc_cash')) document.getElementById('pc_cash').value = draft.cash || '';
+  if (document.getElementById('pc_pasgah')) document.getElementById('pc_pasgah').value = draft.pasgah || '';
+  if (document.getElementById('pc_factor')) document.getElementById('pc_factor').value = draft.factor || '';
+  if (document.getElementById('pc_desc_s')) document.getElementById('pc_desc_s').value = draft.desc || '';
+  if (document.getElementById('pc_broken_desc')) document.getElementById('pc_broken_desc').value = draft.brokenDesc || '';
+  pumpchiBrokenSelected = (draft.broken||[]).slice();
+  renderBrokenChips();
+  updateSysTotalPreview();
+
+  const box = document.getElementById('pumpchiDraftNotice');
+  if (box){ box.classList.remove('hidden'); }
+}
+
 async function loadData(){
   const icon = document.getElementById('refreshIcon');
   icon.classList.add('spin');
   document.getElementById('statusLine').textContent = "در حال دریافت داده از گوگل‌شیت...";
   try{
-    const res = await fetch(APPS_SCRIPT_URL, {method:'GET'});
-    const raw = await res.json();
+    const raw = await fetchAppsScriptJSON(APPS_SCRIPT_URL, {method:'GET'});
     const body = (raw.length && raw[0][0]==="ID") ? raw.slice(1) : raw;
     allRows = body.filter(r => r[0] && r[24] !== true && r[24] !== "TRUE").map(r => ({
       id:r[0], date:normalizeDate(r[1]), operator:r[2],
@@ -840,6 +989,7 @@ async function loadData(){
     renderAll();
   }catch(err){
     document.getElementById('statusLine').textContent = "خطا در اتصال به گوگل‌شیت — لینک Apps Script یا تنظیمات دسترسی را بررسی کنید";
+    document.getElementById('debugLine').innerHTML = `<span class="text-rose-400">جزئیات فنی: ${(err && err.message) ? err.message : err}</span>`;
     console.error(err);
   }
   icon.classList.remove('spin');
@@ -1274,6 +1424,16 @@ function switchPage(name){
 function showPumpchiStandalone(){
   document.getElementById('loginGate').classList.add('hidden');
   document.getElementById('pumpchiStandaloneRoot').classList.remove('hidden');
+
+  // اگه قبلاً روی همین دستگاه وارد شده بود (نشست در localStorage ذخیره شده)، پین‌کد رو دوباره نپرس
+  // و مستقیم برو تو فضای کاری — این دقیقاً همون «پریدن بیرون و از اول پر کردن» رو حل می‌کنه
+  const saved = pumpchiLoadSession();
+  if (saved && saved.name && saved.fuel){
+    pumpchiCurrentUser = saved;
+    pumpchiEnterWorkspace();
+    return;
+  }
+
   pumpchiCurrentUser = null;
   document.getElementById('pumpchiPinGateStandalone').classList.remove('hidden');
   document.getElementById('pumpchiWorkspaceStandalone').classList.add('hidden');
@@ -1350,15 +1510,15 @@ async function verifyPumpchiPin(){
   const pin = document.getElementById('pumpchiPinInputStandalone').value.trim();
   if (!pin) return;
   try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=checkPumpchiPin&pin=${encodeURIComponent(pin)}`);
-    const data = await res.json();
+    const data = await fetchAppsScriptJSON(`${APPS_SCRIPT_URL}?action=checkPumpchiPin&pin=${encodeURIComponent(pin)}`);
     if (data.valid){
       pumpchiCurrentUser = { name: data.name, fuel: data.fuel, salary: toNum(data.salary) };
+      pumpchiSaveSession(pumpchiCurrentUser);
       await pumpchiEnterWorkspace();
     } else {
       document.getElementById('pumpchiPinErrorStandalone').classList.remove('hidden');
     }
-  }catch(err){ alert('خطا در بررسی پین‌کد — اتصال اینترنت یا لینک Apps Script را بررسی کن'); console.error(err); }
+  }catch(err){ alert(`خطا در بررسی پین‌کد — ${(err && err.message) ? err.message : 'اتصال اینترنت یا لینک Apps Script را بررسی کن'}`); console.error(err); }
 }
 
 function nozzleFieldsHtml(i, prefix, label){
@@ -1433,6 +1593,7 @@ function toggleBrokenNozzle(i){
   const idx = pumpchiBrokenSelected.indexOf(i);
   if (idx>=0) pumpchiBrokenSelected.splice(idx,1); else pumpchiBrokenSelected.push(i);
   renderBrokenChips();
+  pumpchiScheduleDraftSave();
 }
 function renderBrokenChips(){
   const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
@@ -1457,6 +1618,8 @@ async function pumpchiEnterWorkspace(){
   document.getElementById('pumpchiPinGateStandalone').classList.add('hidden');
   document.getElementById('pumpchiWorkspaceStandalone').classList.remove('hidden');
   document.getElementById('pumpchiWelcomeStandalone').textContent = `خوش اومدی ${pumpchiCurrentUser.name} (${pumpchiCurrentUser.fuel})`;
+  document.getElementById('pumpchiDraftNotice').classList.add('hidden');
+  pumpchiSaveSession(pumpchiCurrentUser); // هر بار که واردِ فضای کاری میشیم، نشست رو تازه نگه می‌داریم
 
   if (!pumpchiDatePickerStandalone) pumpchiDatePickerStandalone = buildDatePicker('pumpchiDatePickerStandalone', todayJalaliStr());
   else pumpchiDatePickerStandalone.set(todayJalaliStr());
@@ -1469,25 +1632,30 @@ async function pumpchiEnterWorkspace(){
     document.getElementById(`pc_n${i}_end`).value = '';
     document.getElementById(`pc_n${i}_liter`).value = '';
     document.getElementById(`pc_n${i}_sale`).value = '';
-    ['start','end','liter'].forEach(f=> document.getElementById(`pc_n${i}_${f}`).oninput = (e)=>{ formatThousands(e.target); checkNozzleConsistency(i); });
-    document.getElementById(`pc_n${i}_sale`).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); };
+    ['start','end','liter'].forEach(f=> document.getElementById(`pc_n${i}_${f}`).oninput = (e)=>{ formatThousands(e.target); checkNozzleConsistency(i); pumpchiScheduleDraftSave(); });
+    document.getElementById(`pc_n${i}_sale`).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); };
   }
-  ['pc_card1','pc_card2','pc_card3','pc_card4','pc_cash'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); }; });
+  ['pc_card1','pc_card2','pc_card3','pc_card4','pc_cash'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); }; });
   document.getElementById('pc_pasgah').value = '';
   document.getElementById('pc_factor').value = '';
-  document.getElementById('pc_pasgah').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); };
-  document.getElementById('pc_factor').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); };
+  document.getElementById('pc_pasgah').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); };
+  document.getElementById('pc_factor').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); };
   document.getElementById('pc_desc_s').value = '';
+  document.getElementById('pc_desc_s').oninput = pumpchiScheduleDraftSave;
   document.getElementById('pc_broken_desc').value = '';
+  document.getElementById('pc_broken_desc').oninput = pumpchiScheduleDraftSave;
   pumpchiBrokenSelected = [];
   renderBrokenChips();
   refreshPumpchiNozzleStarts();
   updateSysTotalPreview();
 
   // اتصال تغییر تاریخ/شیفت به بازسازی خودکار شماره‌ی اول‌وقت نازل‌ها (زنجیره‌ی چرخشی شیفت)
-  document.getElementById('pc_shift_s').onchange = refreshPumpchiNozzleStarts;
+  document.getElementById('pc_shift_s').onchange = ()=>{ refreshPumpchiNozzleStarts(); pumpchiScheduleDraftSave(); };
   const dpEl = document.getElementById('pumpchiDatePickerStandalone');
-  dpEl.querySelectorAll('.dp-d,.dp-m,.dp-y').forEach(sel=> sel.onchange = refreshPumpchiNozzleStarts);
+  dpEl.querySelectorAll('.dp-d,.dp-m,.dp-y').forEach(sel=> sel.onchange = ()=>{ refreshPumpchiNozzleStarts(); pumpchiScheduleDraftSave(); });
+
+  // اگه پیش‌نویسِ ذخیره‌نشده‌ی همین کاربر از قبل مونده (مثلاً صفحه قطع شده بوده)، خودکار برمی‌گردونه
+  pumpchiRestoreDraftIfMatching();
 
   renderPumpchiSalaryCard();
   renderPumpchiPersonal();
@@ -1522,6 +1690,8 @@ function renderPumpchiSalaryCard(){
 
 function pumpchiLogout(){
   pumpchiCurrentUser = null;
+  pumpchiClearSession();
+  pumpchiClearDraft();
   document.getElementById('pumpchiWorkspaceStandalone').classList.add('hidden');
   document.getElementById('pumpchiPinGateStandalone').classList.remove('hidden');
   document.getElementById('pumpchiPinInputStandalone').value = '';
@@ -1530,8 +1700,7 @@ function pumpchiLogout(){
 let pumpchiAllHistory = [];
 async function loadPumpchiHistory(){
   try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPumpchiHistory`);
-    const raw = await res.json();
+    const raw = await fetchAppsScriptJSON(`${APPS_SCRIPT_URL}?action=getPumpchiHistory`);
     const body = (raw.length && raw[0][0]==='زمان') ? raw.slice(1) : raw;
     pumpchiAllHistory = body.filter(r=>r[3]).map(r=>({
       time:r[0], type:r[1]||'', actor:r[2]||'', shiftId:r[3], oldData:r[4]||'', newData:r[5]||'', note:r[6]||''
@@ -1541,8 +1710,7 @@ async function loadPumpchiHistory(){
 
 async function loadPumpchiAdmin(){
   try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPumpchiShifts`);
-    const raw = await res.json();
+    const raw = await fetchAppsScriptJSON(`${APPS_SCRIPT_URL}?action=getPumpchiShifts`);
     const body = (raw.length && raw[0][0]==='ID') ? raw.slice(1) : raw;
     await loadPumpchiHistory();
     pumpchiAllShifts = body.filter(r=>r[0]).map((r,idx)=>{
@@ -1751,48 +1919,78 @@ function renderPumpchiPersonal(){
     plugins:{legend:{display:false}}}});
 }
 
+let pumpchiSaving = false;
 async function savePumpchiShift(){
-  const date = pumpchiDatePickerStandalone.get();
-  const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
-  const nozzleData = [];
-  for (let i=1;i<=8;i++){
-    if (i<=n){
-      nozzleData.push(
-        toNum(document.getElementById(`pc_n${i}_start`).value),
-        toNum(document.getElementById(`pc_n${i}_end`).value),
-        toNum(document.getElementById(`pc_n${i}_liter`).value),
-        toNum(document.getElementById(`pc_n${i}_sale`).value)
-      );
-    } else {
-      nozzleData.push('','','','');
-    }
-  }
-  const sysTotal = updateSysTotalPreview();
-  const cardVals = [toNum(document.getElementById('pc_card1').value), toNum(document.getElementById('pc_card2').value), toNum(document.getElementById('pc_card3').value), toNum(document.getElementById('pc_card4').value)];
-  const cardTotal = cardVals.reduce((a,b)=>a+b,0);
-  const cash = toNum(document.getElementById('pc_cash').value);
-  const pasgahVal = toNum(document.getElementById('pc_pasgah').value);
-  const factorVal = toNum(document.getElementById('pc_factor').value);
-  // برش پاسگاه و فاکتور جایگاه باید از کسری کم بشن (یعنی به سمت آورده‌شده اضافه بشن)
-  const diff = (cardTotal + cash + pasgahVal + factorVal) - sysTotal;
-  const brokenText = pumpchiBrokenSelected.length ? `نازل‌های خراب: ${pumpchiBrokenSelected.map(i=>pumpchiNozzleLabel(pumpchiCurrentUser.fuel, i)).join('، ')}${document.getElementById('pc_broken_desc').value ? ' — '+document.getElementById('pc_broken_desc').value : ''}` : (document.getElementById('pc_broken_desc').value || '');
+  // محافظت در برابر دابل‌کلیک/دابل‌تپ — دلیل رایج «هی می‌زنم ثبت میشه دوبار» یا حس نکردن واکنش دکمه
+  if (pumpchiSaving) return;
 
-  const row = [
-    date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift_s').value,
-    ...nozzleData,
-    ...cardVals, cash,
-    pasgahVal, factorVal,
-    document.getElementById('pc_desc_s').value,
-    sysTotal, cardTotal, diff,
-    brokenText, ""
-  ];
+  // اگه به هر دلیلی نشست کاربر از دست رفته (مثلاً صفحه رفرش شده و فقط localStorage نجاتش داده ولی هنوز state ساخته نشده)
+  if (!pumpchiCurrentUser || !pumpchiDatePickerStandalone){
+    const saved = pumpchiLoadSession();
+    if (saved){ pumpchiCurrentUser = saved; await pumpchiEnterWorkspace(); alert('نشست شما تازه‌سازی شد — لطفاً اطلاعات رو دوباره بررسی و ذخیره کن'); }
+    else alert('نشست ورودت پیدا نشد — لطفاً دوباره با پین‌کد وارد شو');
+    return;
+  }
+
+  const btn = document.getElementById('pcSaveBtn');
+  const btnIcon = document.getElementById('pcSaveBtnIcon');
+  const btnText = document.getElementById('pcSaveBtnText');
+  pumpchiSaving = true;
+  if (btn) btn.disabled = true;
+  if (btnIcon) btnIcon.className = 'fa-solid fa-spinner fa-spin';
+  if (btnText) btnText.textContent = 'در حال ذخیره...';
+
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'addPumpchiShift', row}) });
-    const result = await res.json();
-    if (result.status !== 'ok') throw new Error('unexpected response');
+    const date = pumpchiDatePickerStandalone.get();
+    const n = NOZZLE_COUNT[pumpchiCurrentUser.fuel] || 8;
+    const nozzleData = [];
+    for (let i=1;i<=8;i++){
+      if (i<=n){
+        nozzleData.push(
+          toNum(document.getElementById(`pc_n${i}_start`).value),
+          toNum(document.getElementById(`pc_n${i}_end`).value),
+          toNum(document.getElementById(`pc_n${i}_liter`).value),
+          toNum(document.getElementById(`pc_n${i}_sale`).value)
+        );
+      } else {
+        nozzleData.push('','','','');
+      }
+    }
+    const sysTotal = updateSysTotalPreview();
+    const cardVals = [toNum(document.getElementById('pc_card1').value), toNum(document.getElementById('pc_card2').value), toNum(document.getElementById('pc_card3').value), toNum(document.getElementById('pc_card4').value)];
+    const cardTotal = cardVals.reduce((a,b)=>a+b,0);
+    const cash = toNum(document.getElementById('pc_cash').value);
+    const pasgahVal = toNum(document.getElementById('pc_pasgah').value);
+    const factorVal = toNum(document.getElementById('pc_factor').value);
+    // برش پاسگاه و فاکتور جایگاه باید از کسری کم بشن (یعنی به سمت آورده‌شده اضافه بشن)
+    const diff = (cardTotal + cash + pasgahVal + factorVal) - sysTotal;
+    const brokenText = pumpchiBrokenSelected.length ? `نازل‌های خراب: ${pumpchiBrokenSelected.map(i=>pumpchiNozzleLabel(pumpchiCurrentUser.fuel, i)).join('، ')}${document.getElementById('pc_broken_desc').value ? ' — '+document.getElementById('pc_broken_desc').value : ''}` : (document.getElementById('pc_broken_desc').value || '');
+
+    const row = [
+      date, pumpchiCurrentUser.name, pumpchiCurrentUser.fuel, document.getElementById('pc_shift_s').value,
+      ...nozzleData,
+      ...cardVals, cash,
+      pasgahVal, factorVal,
+      document.getElementById('pc_desc_s').value,
+      sysTotal, cardTotal, diff,
+      brokenText, ""
+    ];
+
+    await postAppsScriptJSON(APPS_SCRIPT_URL, {action:'addPumpchiShift', row});
+    pumpchiClearDraft();
+    const notice = document.getElementById('pumpchiDraftNotice'); if (notice) notice.classList.add('hidden');
     alert('شیفت با موفقیت ذخیره شد');
     await pumpchiEnterWorkspace();
-  }catch(err){ alert('خطا در ذخیره‌سازی — مطمئن شو Apps Script نسخه‌ی جدید رو Deploy کردی'); console.error(err); }
+  }catch(err){
+    alert(`خطا در ذخیره‌سازی — ${(err && err.message) ? err.message : 'اتصال اینترنت یا دیپلوی Apps Script را بررسی کن'}\n\nنگران نباش: اطلاعاتی که پر کردی به‌صورت پیش‌نویس ذخیره شده و از دست نرفته — همین که اتصال برقرار شد، دوباره «ذخیره شیفت» رو بزن.`);
+    console.error(err);
+    pumpchiScheduleDraftSave();
+  } finally {
+    pumpchiSaving = false;
+    if (btn) btn.disabled = false;
+    if (btnIcon) btnIcon.className = 'fa-solid fa-floppy-disk';
+    if (btnText) btnText.textContent = 'ذخیره شیفت';
+  }
 }
 
 /* ================= PUMPCHI: CORRECTION (admin OR self-edit by the pumpchi) ================= */
@@ -1877,7 +2075,9 @@ function pumpchiCloseCorrectModal(){
   document.getElementById('pumpchiCorrectModal').classList.remove('flex');
   pumpchiCorrectingId = null;
 }
+let pumpchiCorrectSaving = false;
 async function savePumpchiCorrection(){
+  if (pumpchiCorrectSaving) return;
   const note = document.getElementById('pc_correct_note').value.trim();
   if (!note){ alert(pumpchiCorrectingBy==='self' ? 'دلیل ویرایش رو بنویس' : 'دلیل اصلاح رو بنویس'); return; }
   const r = pumpchiAllShifts.find(x=>x.id===pumpchiCorrectingId);
@@ -1915,17 +2115,28 @@ async function savePumpchiCorrection(){
     sysTotal, cardTotal, diff,
     r.broken
   ];
+
+  const btn = document.getElementById('pumpchiCorrectSubmitBtn');
+  pumpchiCorrectSaving = true;
+  if (btn){ btn.disabled = true; btn.dataset.origText = btn.textContent; btn.textContent = 'در حال ثبت...'; }
   try{
-    await fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({
+    await postAppsScriptJSON(APPS_SCRIPT_URL, {
       action:'correctPumpchiShift', id:r.id, row, note,
       by: pumpchiCorrectingBy,
       actorName: pumpchiCorrectingBy==='self' ? (pumpchiCurrentUser ? pumpchiCurrentUser.name : r.name) : 'مدیر'
-    }) });
+    });
     pumpchiCloseCorrectModal();
     await loadPumpchiAdmin();
     if (pumpchiCorrectingBy==='self' && pumpchiCurrentUser) renderPumpchiPersonal();
-  }catch(err){ alert('خطا در ثبت'); console.error(err); }
+  }catch(err){
+    alert(`خطا در ثبت — ${(err && err.message) ? err.message : 'اتصال اینترنت یا دیپلوی Apps Script را بررسی کن'}`);
+    console.error(err);
+  } finally {
+    pumpchiCorrectSaving = false;
+    if (btn){ btn.disabled = false; btn.textContent = btn.dataset.origText || 'ثبت اصلاح'; }
+  }
 }
+
 
 /* ================= PUMPCHI: DELETE SHIFT (manager only) ================= */
 async function pumpchiDeleteShift(id){
@@ -1995,8 +2206,7 @@ function pumpchiRenderEditHistoryList(id){
 let pumpchiEditingPin = null;
 async function loadPumpchiUsers(){
   try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPumpchiUsers`);
-    const raw = await res.json();
+    const raw = await fetchAppsScriptJSON(`${APPS_SCRIPT_URL}?action=getPumpchiUsers`);
     const body = (raw.length && raw[0][0]==='پین‌کد') ? raw.slice(1) : raw;
     pumpchiAllUsers = body.filter(r=>r[0]).map(r=>({ pin:String(r[0]), name:r[1], fuel:r[2], salary:toNum(r[3]) }));
     renderPumpchiUsersTable();
