@@ -334,6 +334,31 @@
           </table>
         </div>
       </div>
+
+      <!-- درخواست‌ها و مرخصی -->
+      <div class="glass-panel p-5 space-y-4">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-envelope-open-text text-amber-400"></i>درخواست‌ها و مرخصی</h3>
+
+        <div class="step-card">
+          <div class="step-head">
+            <span class="step-num"><i class="fa-solid fa-plus"></i></span>
+            <div><p class="step-title">ثبت درخواست جدید</p><p class="step-sub">نوع درخواست رو انتخاب کن و فرم رو پر کن</p></div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-3" id="pumpchiTicketTypeChips"></div>
+          <div id="pumpchiTicketFields" class="space-y-3"></div>
+          <label class="space-y-1 block mt-3"><span class="text-slate-400 text-xs">توضیحات</span>
+            <textarea id="pt_desc" rows="2" class="w-full text-xs" placeholder="توضیح بیشتر (اختیاری، ولی توصیه میشه)"></textarea>
+          </label>
+          <button id="ptSubmitBtn" onclick="submitPumpchiTicket()" class="w-full mt-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+            <i id="ptSubmitBtnIcon" class="fa-solid fa-paper-plane"></i><span id="ptSubmitBtnText">ارسال درخواست برای مدیر</span>
+          </button>
+        </div>
+
+        <div>
+          <p class="text-xs text-slate-400 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-list-check"></i>درخواست‌های من</p>
+          <div class="space-y-2" id="pumpchiMyTicketsList"></div>
+        </div>
+      </div>
     </section>
   </div>
 </div>
@@ -503,6 +528,20 @@
     </section>
   </div>
 
+  <!-- تیکت‌های درخواستی پمپچی‌ها (مرخصی، تعویض شیفت، مساعده و ...) -->
+  <section class="glass-panel p-5 space-y-3 glow-amber">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-envelope-open-text text-amber-400"></i>تیکت‌های درخواستی پمپچی‌ها</h3>
+      <select id="pumpchiTicketFilterStatus" onchange="renderPumpchiAdminTickets()" class="text-xs">
+        <option value="">همه‌ی وضعیت‌ها</option>
+        <option value="در انتظار بررسی">در انتظار بررسی</option>
+        <option value="تایید شده">تایید شده</option>
+        <option value="رد شده">رد شده</option>
+      </select>
+    </div>
+    <div class="space-y-2" id="pumpchiAdminTicketsList"></div>
+  </section>
+
   <!-- گزارش شیفت‌های یک روز -->
   <section class="glass-panel p-5 space-y-3">
     <div class="flex flex-wrap justify-between items-center gap-3">
@@ -598,6 +637,24 @@
       <button onclick="pumpchiCloseEditHistory()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
     </div>
     <div class="flex flex-col gap-2 text-xs" id="pumpchiEditHistoryList"></div>
+  </div>
+</div>
+
+<!-- TICKET RESPONSE MODAL (manager approves/rejects a pumpchi request) -->
+<div id="pumpchiTicketRespondModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden justify-center items-center p-4 z-50">
+  <div class="glass-panel w-full max-w-md p-6 space-y-3 border-amber-500/30 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+      <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-envelope-open-text text-amber-400"></i>پاسخ به درخواست</h3>
+      <button onclick="pumpchiCloseTicketRespond()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <div class="stat-pill" id="pumpchiTicketRespondSummary"></div>
+    <label class="space-y-1 block text-xs"><span class="text-slate-400">یادداشت / توضیح (اختیاری)</span>
+      <textarea id="pt_response_note" rows="2" class="w-full text-xs"></textarea>
+    </label>
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <button onclick="pumpchiSubmitTicketResponse('رد شده')" class="bg-rose-500/15 border border-rose-500/40 text-rose-300 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2"><i class="fa-solid fa-circle-xmark"></i>رد درخواست</button>
+      <button onclick="pumpchiSubmitTicketResponse('تایید شده')" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2"><i class="fa-solid fa-circle-check"></i>تایید درخواست</button>
+    </div>
   </div>
 </div>
 
@@ -1467,6 +1524,18 @@ let pumpchiCorrectingId = null;
 let pumpchiReportDatePicker = null;
 let pumpchiHistFromPicker = null, pumpchiHistToPicker = null;
 
+/* ================= PUMPCHI: TICKETS (درخواست‌ها و مرخصی) ================= */
+const PUMPCHI_TICKET_TYPES = {
+  'مرخصی روزانه':   { icon:'fa-calendar-days',   color:'text-sky-300',    fields:['dateRange'] },
+  'مرخصی ساعتی':    { icon:'fa-business-time',   color:'text-amber-300',  fields:['dateSingle','timeRange'] },
+  'تعویض شیفت':     { icon:'fa-arrows-rotate',   color:'text-violet-300', fields:['dateSingle','shiftNum'] },
+  'درخواست مساعده': { icon:'fa-money-bill-wave', color:'text-emerald-300',fields:['amount'] },
+  'سایر درخواست‌ها': { icon:'fa-comment-dots',    color:'text-slate-300', fields:[] }
+};
+let pumpchiAllTickets = [];
+let pumpchiTicketType = 'مرخصی روزانه';
+let pumpchiTicketDateA = null, pumpchiTicketDateB = null;
+
 /* ---- فرمت‌کننده‌ی سه‌رقمی (کاما) برای فیلدهای عددی پمپچی ---- */
 function formatThousands(el){
   const raw = faToEnDigits(el.value).replace(/[^\d]/g,'');
@@ -1659,6 +1728,12 @@ async function pumpchiEnterWorkspace(){
 
   renderPumpchiSalaryCard();
   renderPumpchiPersonal();
+
+  // فرم ثبت درخواست/مرخصی رو هم هر بار که وارد فضای کاری میشیم بازنشانی می‌کنیم
+  pumpchiTicketType = 'مرخصی روزانه';
+  pumpchiRenderTicketTypeChips();
+  pumpchiRenderTicketFields();
+  document.getElementById('pt_desc').value = '';
 }
 
 function renderPumpchiSalaryCard(){
@@ -1708,6 +1783,18 @@ async function loadPumpchiHistory(){
   }catch(err){ console.error(err); pumpchiAllHistory = []; }
 }
 
+async function loadPumpchiTickets(){
+  try{
+    const raw = await fetchAppsScriptJSON(`${APPS_SCRIPT_URL}?action=getPumpchiTickets`);
+    const body = (raw.length && raw[0][0]==='ID') ? raw.slice(1) : raw;
+    pumpchiAllTickets = body.filter(r=>r[0]).map(r=>({
+      id:r[0], createdAt:r[1]||'', name:r[2]||'', type:r[3]||'', dateStart:r[4]||'', dateEnd:r[5]||'',
+      timeStart:r[6]||'', timeEnd:r[7]||'', shiftNum:r[8]||'', amount:(r[9]!==''&&r[9]!==undefined) ? Number(r[9])||0 : '',
+      desc:r[10]||'', status:r[11]||'در انتظار بررسی', response:r[12]||'', respondedAt:r[13]||''
+    })).sort((a,b)=> a.createdAt < b.createdAt ? 1 : -1);
+  }catch(err){ console.error(err); pumpchiAllTickets = []; }
+}
+
 async function loadPumpchiAdmin(){
   try{
     const raw = await fetchAppsScriptJSON(`${APPS_SCRIPT_URL}?action=getPumpchiShifts`);
@@ -1740,6 +1827,10 @@ async function loadPumpchiAdmin(){
       renderPumpchiBrokenSummary();
     }
     if (pumpchiReportDatePicker) pumpchiRenderDailyReport();
+
+    await loadPumpchiTickets();
+    if (document.getElementById('pumpchiAdminTicketsList')) renderPumpchiAdminTickets();
+    if (pumpchiCurrentUser && document.getElementById('pumpchiMyTicketsList')) renderPumpchiMyTickets();
   }catch(err){ console.error(err); }
 }
 
@@ -1748,6 +1839,216 @@ function diffBadge(diff, fuel){
   if (diff < 0) return `<span class="status-badge badge-bad"><i class="fa-solid fa-arrow-trend-down"></i>${Math.abs(diff).toLocaleString('fa-IR')} کسری</span>`;
   if (diff > 0) return `<span class="status-badge badge-ok"><i class="fa-solid fa-arrow-trend-up"></i>${diff.toLocaleString('fa-IR')} ${posWord}</span>`;
   return `<span class="status-badge badge-info"><i class="fa-solid fa-circle-check"></i>مطابقت</span>`;
+}
+
+/* ================= PUMPCHI: TICKETS (درخواست‌ها و مرخصی) ================= */
+function pumpchiRenderTicketTypeChips(){
+  const wrap = document.getElementById('pumpchiTicketTypeChips');
+  if (!wrap) return;
+  wrap.innerHTML = Object.keys(PUMPCHI_TICKET_TYPES).map(t=>{
+    const cfg = PUMPCHI_TICKET_TYPES[t];
+    const active = t === pumpchiTicketType;
+    return `<button type="button" onclick="pumpchiSetTicketType('${t}')" class="px-3 py-1.5 rounded-lg text-xs border flex items-center gap-1.5 ${active ? 'bg-amber-500/15 border-amber-500/50 text-amber-300 font-bold' : 'bg-slate-800/60 border-slate-700 text-slate-300'}">
+      <i class="fa-solid ${cfg.icon}"></i>${t}
+    </button>`;
+  }).join('');
+}
+function pumpchiSetTicketType(t){
+  pumpchiTicketType = t;
+  pumpchiRenderTicketTypeChips();
+  pumpchiRenderTicketFields();
+}
+function pumpchiRenderTicketFields(){
+  const cfg = PUMPCHI_TICKET_TYPES[pumpchiTicketType];
+  const box = document.getElementById('pumpchiTicketFields');
+  if (!box) return;
+  let html = '';
+  if (cfg.fields.includes('dateRange')){
+    html += `<div class="grid grid-cols-2 gap-3 text-xs">
+      <div><p class="text-slate-400 mb-1">از تاریخ</p><div class="flex gap-1" id="pt_date_a"></div></div>
+      <div><p class="text-slate-400 mb-1">تا تاریخ</p><div class="flex gap-1" id="pt_date_b"></div></div>
+    </div>`;
+  } else if (cfg.fields.includes('dateSingle')){
+    html += `<div><p class="text-slate-400 mb-1 text-xs">تاریخ</p><div class="flex gap-1" id="pt_date_a"></div></div>`;
+  }
+  if (cfg.fields.includes('timeRange')){
+    html += `<div class="grid grid-cols-2 gap-3 text-xs mt-3">
+      <label class="space-y-1"><span class="text-slate-400">از ساعت</span><input id="pt_time_a" type="time" class="w-full"></label>
+      <label class="space-y-1"><span class="text-slate-400">تا ساعت</span><input id="pt_time_b" type="time" class="w-full"></label>
+    </div>`;
+  }
+  if (cfg.fields.includes('shiftNum')){
+    html += `<label class="space-y-1 block text-xs mt-3"><span class="text-slate-400">شماره شیفت</span>
+      <select id="pt_shift" class="w-full"><option value="اول">اول</option><option value="دوم">دوم</option><option value="سوم">سوم</option></select>
+    </label>`;
+  }
+  if (cfg.fields.includes('amount')){
+    html += `<label class="space-y-1 block text-xs mt-3"><span class="text-slate-400">مبلغ درخواستی (تومان)</span>
+      <input id="pt_amount" type="text" inputmode="numeric" class="w-full" placeholder="0">
+    </label>`;
+  }
+  box.innerHTML = html;
+  pumpchiTicketDateA = (cfg.fields.includes('dateRange') || cfg.fields.includes('dateSingle')) ? buildDatePicker('pt_date_a', todayJalaliStr()) : null;
+  pumpchiTicketDateB = cfg.fields.includes('dateRange') ? buildDatePicker('pt_date_b', todayJalaliStr()) : null;
+  const amtEl = document.getElementById('pt_amount');
+  if (amtEl) amtEl.oninput = (e)=> formatThousands(e.target);
+}
+
+let pumpchiTicketSaving = false;
+async function submitPumpchiTicket(){
+  if (!pumpchiCurrentUser || pumpchiTicketSaving) return;
+  const cfg = PUMPCHI_TICKET_TYPES[pumpchiTicketType];
+  const desc = document.getElementById('pt_desc').value.trim();
+  if (!desc && cfg.fields.length === 0){ alert('لطفاً توضیح بده چی می‌خوای'); return; }
+
+  let dateStart='', dateEnd='', timeStart='', timeEnd='', shiftNum='', amount='';
+  if (cfg.fields.includes('dateRange')){ dateStart = pumpchiTicketDateA.get(); dateEnd = pumpchiTicketDateB.get(); }
+  else if (cfg.fields.includes('dateSingle')){ dateStart = pumpchiTicketDateA.get(); }
+  if (cfg.fields.includes('timeRange')){ timeStart = document.getElementById('pt_time_a').value; timeEnd = document.getElementById('pt_time_b').value; }
+  if (cfg.fields.includes('shiftNum')){ shiftNum = document.getElementById('pt_shift').value; }
+  if (cfg.fields.includes('amount')){ amount = toNum(document.getElementById('pt_amount').value); }
+
+  const row = [pumpchiCurrentUser.name, pumpchiTicketType, dateStart, dateEnd, timeStart, timeEnd, shiftNum, amount, desc];
+
+  const btn = document.getElementById('ptSubmitBtn');
+  const btnIcon = document.getElementById('ptSubmitBtnIcon');
+  const btnText = document.getElementById('ptSubmitBtnText');
+  pumpchiTicketSaving = true;
+  if (btn) btn.disabled = true;
+  if (btnIcon) btnIcon.className = 'fa-solid fa-spinner fa-spin';
+  if (btnText) btnText.textContent = 'در حال ارسال...';
+  try{
+    await postAppsScriptJSON(APPS_SCRIPT_URL, {action:'addPumpchiTicket', row});
+    document.getElementById('pt_desc').value = '';
+    await loadPumpchiTickets();
+    renderPumpchiMyTickets();
+  }catch(err){
+    alert(`خطا در ارسال درخواست — ${(err && err.message) ? err.message : 'اتصال اینترنت یا دیپلوی Apps Script را بررسی کن'}`);
+    console.error(err);
+  } finally {
+    pumpchiTicketSaving = false;
+    if (btn) btn.disabled = false;
+    if (btnIcon) btnIcon.className = 'fa-solid fa-paper-plane';
+    if (btnText) btnText.textContent = 'ارسال درخواست برای مدیر';
+  }
+}
+
+function pumpchiTicketStatusBadge(status){
+  if (status === 'تایید شده') return `<span class="status-badge badge-ok"><i class="fa-solid fa-circle-check"></i>تایید شده</span>`;
+  if (status === 'رد شده') return `<span class="status-badge badge-bad"><i class="fa-solid fa-circle-xmark"></i>رد شده</span>`;
+  return `<span class="status-badge badge-warn"><i class="fa-solid fa-hourglass-half"></i>در انتظار بررسی</span>`;
+}
+function pumpchiTicketDetailLine(t){
+  const parts = [];
+  if (t.dateStart && t.dateEnd && t.dateStart !== t.dateEnd) parts.push(`از ${t.dateStart} تا ${t.dateEnd}`);
+  else if (t.dateStart) parts.push(t.dateStart);
+  if (t.timeStart || t.timeEnd) parts.push(`ساعت ${t.timeStart||'؟'} تا ${t.timeEnd||'؟'}`);
+  if (t.shiftNum) parts.push(`شیفت ${t.shiftNum}`);
+  if (t.amount !== '' && t.amount !== undefined) parts.push(`${Number(t.amount).toLocaleString('fa-IR')} تومان`);
+  return parts.join(' — ');
+}
+function pumpchiFmtTicketTime(iso){
+  try{ return new Date(iso).toLocaleString('fa-IR'); }catch(e){ return iso; }
+}
+
+function renderPumpchiMyTickets(){
+  if (!pumpchiCurrentUser) return;
+  const mine = pumpchiAllTickets.filter(t=>t.name===pumpchiCurrentUser.name);
+  const box = document.getElementById('pumpchiMyTicketsList');
+  if (!box) return;
+  box.innerHTML = mine.map(t=>{
+    const cfg = PUMPCHI_TICKET_TYPES[t.type] || {icon:'fa-comment-dots', color:'text-slate-300'};
+    const canCancel = t.status === 'در انتظار بررسی';
+    const rc = t.status==='تایید شده' ? 'rc-good' : (t.status==='رد شده' ? 'rc-bad' : 'rc-ok');
+    return `<div class="report-card ${rc} space-y-1.5">
+      <div class="flex justify-between items-start gap-2">
+        <p class="font-bold text-slate-200 text-xs flex items-center gap-1.5"><i class="fa-solid ${cfg.icon} ${cfg.color}"></i>${t.type}</p>
+        ${pumpchiTicketStatusBadge(t.status)}
+      </div>
+      <p class="text-[11px] text-slate-400">${pumpchiTicketDetailLine(t) || '-'}</p>
+      ${t.desc ? `<p class="text-[11px] text-slate-500">${t.desc}</p>` : ''}
+      ${t.response ? `<p class="text-[11px] bg-slate-900/50 rounded-lg p-2 text-slate-300"><i class="fa-solid fa-reply text-cyan-400"></i> پاسخ مدیر: ${t.response}</p>` : ''}
+      <div class="flex justify-between items-center pt-1">
+        <span class="text-[10px] text-slate-600">ثبت‌شده: <bdi>${pumpchiFmtTicketTime(t.createdAt)}</bdi></span>
+        ${canCancel ? `<button onclick="pumpchiCancelTicket('${t.id}')" class="text-[11px] text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i> لغو درخواست</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') || `<p class="text-xs text-slate-500 text-center py-4">هنوز درخواستی ثبت نکردی</p>`;
+}
+async function pumpchiCancelTicket(id){
+  if (!confirm('مطمئنی می‌خوای این درخواست رو لغو کنی؟')) return;
+  try{
+    await postAppsScriptJSON(APPS_SCRIPT_URL, {action:'deletePumpchiTicket', id});
+    await loadPumpchiTickets();
+    renderPumpchiMyTickets();
+  }catch(err){ alert('خطا در لغو درخواست'); console.error(err); }
+}
+
+/* ---- ADMIN side: review + approve/reject + delete ---- */
+function renderPumpchiAdminTickets(){
+  const box = document.getElementById('pumpchiAdminTicketsList');
+  if (!box) return;
+  const filterStatus = document.getElementById('pumpchiTicketFilterStatus')?.value || '';
+  const rows = pumpchiAllTickets.filter(t=> !filterStatus || t.status===filterStatus);
+  box.innerHTML = rows.map(t=>{
+    const cfg = PUMPCHI_TICKET_TYPES[t.type] || {icon:'fa-comment-dots', color:'text-slate-300'};
+    const rc = t.status==='تایید شده' ? 'rc-good' : (t.status==='رد شده' ? 'rc-bad' : 'rc-ok');
+    const pending = t.status === 'در انتظار بررسی';
+    return `<div class="report-card ${rc} space-y-1.5">
+      <div class="flex justify-between items-start gap-2 flex-wrap">
+        <p class="font-bold text-slate-200 text-xs flex items-center gap-1.5"><i class="fa-solid fa-user text-teal-400"></i>${t.name} <span class="text-slate-500 font-normal">—</span> <i class="fa-solid ${cfg.icon} ${cfg.color}"></i>${t.type}</p>
+        ${pumpchiTicketStatusBadge(t.status)}
+      </div>
+      <p class="text-[11px] text-slate-400">${pumpchiTicketDetailLine(t) || '-'}</p>
+      ${t.desc ? `<p class="text-[11px] text-slate-500">${t.desc}</p>` : ''}
+      ${t.response ? `<p class="text-[11px] bg-slate-900/50 rounded-lg p-2 text-slate-300"><i class="fa-solid fa-reply text-cyan-400"></i> پاسخ شما: ${t.response} <span class="text-slate-600">(${t.respondedAt})</span></p>` : ''}
+      <div class="flex justify-between items-center pt-1">
+        <span class="text-[10px] text-slate-600">ثبت‌شده: <bdi>${pumpchiFmtTicketTime(t.createdAt)}</bdi></span>
+        <div class="flex items-center gap-2">
+          ${pending ? `<button onclick="pumpchiOpenTicketRespond('${t.id}')" class="text-[11px] text-amber-300 hover:text-amber-200 font-bold"><i class="fa-solid fa-reply"></i> بررسی</button>` : ''}
+          <button onclick="pumpchiDeleteTicket('${t.id}')" class="text-[11px] text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || `<p class="text-xs text-slate-500 text-center py-4">درخواستی با این فیلتر پیدا نشد</p>`;
+}
+async function pumpchiDeleteTicket(id){
+  if (!confirm('مطمئنی می‌خوای این تیکت رو حذف کنی؟')) return;
+  try{
+    await postAppsScriptJSON(APPS_SCRIPT_URL, {action:'deletePumpchiTicket', id});
+    await loadPumpchiTickets();
+    renderPumpchiAdminTickets();
+  }catch(err){ alert('خطا در حذف تیکت'); console.error(err); }
+}
+let pumpchiRespondingTicketId = null;
+function pumpchiOpenTicketRespond(id){
+  const t = pumpchiAllTickets.find(x=>x.id===id);
+  if (!t) return;
+  pumpchiRespondingTicketId = id;
+  const cfg = PUMPCHI_TICKET_TYPES[t.type] || {icon:'fa-comment-dots', color:'text-slate-300'};
+  document.getElementById('pumpchiTicketRespondSummary').innerHTML = `
+    <span class="lbl"><i class="fa-solid ${cfg.icon} ${cfg.color}"></i>${t.name} — ${t.type}</span>
+    <span class="val !text-[12px]">${pumpchiTicketDetailLine(t) || '-'}</span>
+    ${t.desc ? `<span class="text-[11px] text-slate-400 mt-1">${t.desc}</span>` : ''}
+  `;
+  document.getElementById('pt_response_note').value = '';
+  document.getElementById('pumpchiTicketRespondModal').classList.remove('hidden');
+  document.getElementById('pumpchiTicketRespondModal').classList.add('flex');
+}
+function pumpchiCloseTicketRespond(){
+  document.getElementById('pumpchiTicketRespondModal').classList.add('hidden');
+  document.getElementById('pumpchiTicketRespondModal').classList.remove('flex');
+  pumpchiRespondingTicketId = null;
+}
+async function pumpchiSubmitTicketResponse(status){
+  if (!pumpchiRespondingTicketId) return;
+  const response = document.getElementById('pt_response_note').value.trim();
+  try{
+    await postAppsScriptJSON(APPS_SCRIPT_URL, {action:'respondPumpchiTicket', id:pumpchiRespondingTicketId, status, response});
+    pumpchiCloseTicketRespond();
+    await loadPumpchiTickets();
+    renderPumpchiAdminTickets();
+  }catch(err){ alert('خطا در ثبت پاسخ'); console.error(err); }
 }
 
 function renderPumpchiAdminTable(){
