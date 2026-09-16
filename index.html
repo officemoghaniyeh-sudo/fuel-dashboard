@@ -258,7 +258,7 @@
             <span class="step-num">۳</span>
             <div><p class="step-title">دریافتی‌ها</p><p class="step-sub">کارتخوان‌ها و مبلغ نقدی دریافت‌شده</p></div>
           </div>
-          <p class="text-xs text-slate-400 mb-2">کارتخوان (تا ۴ دستگاه، هرکدوم که استفاده شده رو پر کن)</p>
+          <p class="text-xs text-slate-400 mb-2" id="pc_card_hint">کارتخوان (تا ۴ دستگاه، هرکدوم که استفاده شده رو پر کن)</p>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">
             <input id="pc_card1" type="text" inputmode="numeric" class="w-full" placeholder="کارتخوان ۱">
             <input id="pc_card2" type="text" inputmode="numeric" class="w-full" placeholder="کارتخوان ۲">
@@ -555,6 +555,21 @@
       </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="pumpchiDailyReportGrid"></div>
+  </section>
+
+  <!-- گزارش کارتخوان‌های نفت‌گاز (ملت/ملی/پاسارگاد/سایر) -->
+  <section class="glass-panel p-5 space-y-4">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+      <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2"><i class="fa-solid fa-credit-card text-violet-400"></i>گزارش کارتخوان‌های نفت‌گاز</h3>
+      <div class="flex flex-wrap items-end gap-3 text-xs">
+        <div><p class="text-slate-400 mb-1">از تاریخ</p><div class="flex gap-1" id="pumpchiCardReportFromPicker"></div></div>
+        <div><p class="text-slate-400 mb-1">تا تاریخ</p><div class="flex gap-1" id="pumpchiCardReportToPicker"></div></div>
+        <button onclick="renderPumpchiCardReport()" class="preset-btn !bg-violet-600 !text-white !border-violet-600">اعمال بازه</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="pumpchiCardReportStats"></div>
+    <div class="relative h-56"><canvas id="pumpchiCardReportChart"></canvas></div>
+    <p class="text-xs text-slate-400" id="pumpchiCardReportSummary"></p>
   </section>
 
   <!-- ADMIN VIEW -->
@@ -1472,6 +1487,11 @@ function switchPage(name){
       pumpchiReportDatePicker = buildDatePicker('pumpchiReportDatePicker', todayJalaliStr());
       document.getElementById('pumpchiReportDatePicker').querySelectorAll('.dp-d,.dp-m,.dp-y').forEach(sel=> sel.onchange = pumpchiRenderDailyReport);
     }
+    if (!pumpchiCardReportFromPicker){
+      const t = todayJalaliStr();
+      pumpchiCardReportFromPicker = buildDatePicker('pumpchiCardReportFromPicker', addDaysToJalaliStr(t,-29));
+      pumpchiCardReportToPicker = buildDatePicker('pumpchiCardReportToPicker', t);
+    }
     loadPumpchiUsers();
     loadPumpchiAdmin();
   }
@@ -1511,6 +1531,14 @@ const NOZZLE_TOLERANCE = 2; // اختلاف مجاز بین (شماره آخر -
 function pumpchiNozzleLabel(fuel, i){
   return fuel === 'نفت‌گاز' ? (i + 8) : i;
 }
+// نام کارتخوان‌ها برای نفت‌گاز به بانک خاص هر دستگاه تغییر می‌کنه (برای بنزین همچنان کارتخوان ۱..۴ عمومیه)
+const PUMPCHI_CARD_LABELS = {
+  'نفت‌گاز': ['کارتخوان ملت', 'کارتخوان ملی', 'کارتخوان پاسارگاد', 'کارتخوان سایر']
+};
+function pumpchiCardLabel(fuel, i){
+  const list = PUMPCHI_CARD_LABELS[fuel];
+  return list ? list[i-1] : `کارتخوان ${i.toLocaleString('fa-IR')}`;
+}
 let pumpchiAllShifts = [];
 let pumpchiAllUsers = [];
 let pumpchiCurrentUser = null; // {name, fuel, salary}
@@ -1522,6 +1550,8 @@ let pumpchiCashChartObj = null;
 let pumpchiBrokenSelected = [];
 let pumpchiCorrectingId = null;
 let pumpchiReportDatePicker = null;
+let pumpchiCardReportFromPicker = null, pumpchiCardReportToPicker = null;
+let pumpchiCardReportChartObj = null;
 let pumpchiHistFromPicker = null, pumpchiHistToPicker = null;
 
 /* ================= PUMPCHI: TICKETS (درخواست‌ها و مرخصی) ================= */
@@ -1705,6 +1735,10 @@ async function pumpchiEnterWorkspace(){
     document.getElementById(`pc_n${i}_sale`).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); };
   }
   ['pc_card1','pc_card2','pc_card3','pc_card4','pc_cash'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); }; });
+  for (let i=1;i<=4;i++){ document.getElementById(`pc_card${i}`).placeholder = pumpchiCardLabel(pumpchiCurrentUser.fuel, i); }
+  document.getElementById('pc_card_hint').textContent = pumpchiCurrentUser.fuel==='نفت‌گاز'
+    ? 'کارتخوان (هرکدوم که استفاده شده رو پر کن — ملت / ملی / پاسارگاد / سایر)'
+    : 'کارتخوان (تا ۴ دستگاه، هرکدوم که استفاده شده رو پر کن)';
   document.getElementById('pc_pasgah').value = '';
   document.getElementById('pc_factor').value = '';
   document.getElementById('pc_pasgah').oninput = (e)=>{ formatThousands(e.target); updateSysTotalPreview(); pumpchiScheduleDraftSave(); };
@@ -1827,6 +1861,7 @@ async function loadPumpchiAdmin(){
       renderPumpchiBrokenSummary();
     }
     if (pumpchiReportDatePicker) pumpchiRenderDailyReport();
+    if (pumpchiCardReportFromPicker) renderPumpchiCardReport();
 
     await loadPumpchiTickets();
     if (document.getElementById('pumpchiAdminTicketsList')) renderPumpchiAdminTickets();
@@ -2156,6 +2191,55 @@ function pumpchiRenderDailyReport(){
   }).join('');
 }
 
+/* ---- گزارش کارتخوان‌های نفت‌گاز (ملت/ملی/پاسارگاد/سایر) در یک بازه‌ی زمانی دلخواه ---- */
+function renderPumpchiCardReport(){
+  if (!pumpchiCardReportFromPicker || !pumpchiCardReportToPicker) return;
+  const from = pumpchiCardReportFromPicker.get();
+  const to = pumpchiCardReportToPicker.get();
+  const rows = pumpchiAllShifts.filter(r => r.fuel==='نفت‌گاز' && r.date>=from && r.date<=to);
+
+  const totals = [0,0,0,0];
+  let cashTotal = 0;
+  rows.forEach(r=>{
+    for (let i=0;i<4;i++) totals[i] += (r.card[i]||0);
+    cashTotal += (r.cash||0);
+  });
+  const grandTotal = totals.reduce((a,b)=>a+b,0);
+  const colors = ['#f59e0b','#22d3ee','#34d399','#a78bfa'];
+
+  const statsEl = document.getElementById('pumpchiCardReportStats');
+  if (statsEl){
+    statsEl.innerHTML = [0,1,2,3].map(i=>`
+      <div class="stat-pill">
+        <span class="lbl"><i class="fa-solid fa-credit-card" style="color:${colors[i]}"></i>${pumpchiCardLabel('نفت‌گاز', i+1)}</span>
+        <span class="val">${totals[i].toLocaleString('fa-IR')} تومان</span>
+      </div>`).join('');
+  }
+
+  const summaryEl = document.getElementById('pumpchiCardReportSummary');
+  if (summaryEl){
+    summaryEl.innerHTML = rows.length
+      ? `از <b class="text-slate-200">${from}</b> تا <b class="text-slate-200">${to}</b> — مجموع کل کارتخوان‌ها: <b class="text-teal-300">${grandTotal.toLocaleString('fa-IR')} تومان</b> (روی ${rows.length.toLocaleString('fa-IR')} شیفت) — نقدی این بازه: <b class="text-emerald-300">${cashTotal.toLocaleString('fa-IR')} تومان</b>`
+      : `در این بازه هیچ شیفت نفت‌گازی ثبت نشده`;
+  }
+
+  const ctxEl = document.getElementById('pumpchiCardReportChart');
+  if (ctxEl){
+    if (pumpchiCardReportChartObj) pumpchiCardReportChartObj.destroy();
+    pumpchiCardReportChartObj = new Chart(ctxEl.getContext('2d'), {
+      type:'bar',
+      data:{
+        labels:[0,1,2,3].map(i=>pumpchiCardLabel('نفت‌گاز', i+1)),
+        datasets:[{ label:'مجموع (تومان)', data: totals, backgroundColor: colors, borderRadius:6 }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false,
+        scales:{ y:{ beginAtZero:true, ticks:{ color:'#94a3b8', font:{family:'Vazirmatn',size:10} }, grid:{ color:'rgba(255,255,255,.05)' } },
+                 x:{ ticks:{ color:'#cbd5e1', font:{family:'Vazirmatn',size:11} }, grid:{ display:false } } },
+        plugins:{ legend:{ display:false } } }
+    });
+  }
+}
+
 function renderPumpchiPersonal(){
   const mine = pumpchiAllShifts.filter(r=>r.name===pumpchiCurrentUser.name).sort((a,b)=>a.date<b.date?-1:1);
   // برای تشخیص رکوردهای تکراری (چند بار ثبت یک شیفت): بر اساس تاریخ + شماره‌ی شیفت گروه‌بندی می‌کنیم
@@ -2356,10 +2440,10 @@ function pumpchiOpenCorrect(id, by){
 
   document.getElementById('pumpchiCorrectFields').innerHTML = `
     <label class="space-y-1 col-span-2"><span class="text-slate-400">تاریخ / نام / شیفت</span><input class="w-full" value="${r.date} — ${r.name} — شیفت ${r.shift}" disabled></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۱</span><input id="pcc_card1" type="text" inputmode="numeric" class="w-full" value="${r.card[0].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۲</span><input id="pcc_card2" type="text" inputmode="numeric" class="w-full" value="${r.card[1].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۳</span><input id="pcc_card3" type="text" inputmode="numeric" class="w-full" value="${r.card[2].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
-    <label class="space-y-1"><span class="text-slate-400">کارتخوان ۴</span><input id="pcc_card4" type="text" inputmode="numeric" class="w-full" value="${r.card[3].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">${pumpchiCardLabel(r.fuel,1)}</span><input id="pcc_card1" type="text" inputmode="numeric" class="w-full" value="${r.card[0].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">${pumpchiCardLabel(r.fuel,2)}</span><input id="pcc_card2" type="text" inputmode="numeric" class="w-full" value="${r.card[1].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">${pumpchiCardLabel(r.fuel,3)}</span><input id="pcc_card3" type="text" inputmode="numeric" class="w-full" value="${r.card[2].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
+    <label class="space-y-1"><span class="text-slate-400">${pumpchiCardLabel(r.fuel,4)}</span><input id="pcc_card4" type="text" inputmode="numeric" class="w-full" value="${r.card[3].toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
     <label class="space-y-1"><span class="text-slate-400">نقدی</span><input id="pcc_cash" type="text" inputmode="numeric" class="w-full" value="${(r.cash||0).toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
     <label class="space-y-1"><span class="text-slate-400">برش پاسگاه</span><input id="pcc_pasgah" type="text" inputmode="numeric" class="w-full" value="${r.pasgah.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
     <label class="space-y-1"><span class="text-slate-400">فاکتور جایگاه</span><input id="pcc_factor" type="text" inputmode="numeric" class="w-full" value="${r.factor.toLocaleString('en-US')}" oninput="formatThousands(this)"></label>
